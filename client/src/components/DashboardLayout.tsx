@@ -70,8 +70,7 @@ export default function DashboardLayout({
           </div>
           <Button
             onClick={() => {
-              // Disabled OAuth redirect for demo mode
-              // window.location.href = getLoginUrl();
+              window.location.href = "/studio";
             }}
             size="lg"
             className="w-full shadow-lg hover:shadow-xl transition-all"

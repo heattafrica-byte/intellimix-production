@@ -1072,8 +1072,7 @@ export default function Studio() {
                 size="sm"
                 className="text-xs"
                 onClick={() => {
-                  // Disabled OAuth redirect for demo mode
-                  // window.location.href = getLoginUrl();
+                  window.location.href = "/studio";
                 }}
               >
                 Sign In
@@ -1567,8 +1566,7 @@ export default function Studio() {
                     size="lg"
                     className="gap-2 px-8"
                     onClick={() => {
-                      // Disabled OAuth redirect for demo mode
-                      // window.location.href = getLoginUrl();
+                      window.location.href = "/studio";
                     }}
                   >
                     <Zap size={16} />
