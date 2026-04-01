@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { Express } from "express";
-import { db } from "../db";
+import { getDb } from "../db";
 import { subscriptions } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 
@@ -62,6 +62,12 @@ export function setupStripeWebhooks(app: Express) {
 }
 
 async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
+  const db = await getDb();
+  if (!db) {
+    console.error("Database not available");
+    return;
+  }
+
   const userId = subscription.metadata?.userId;
   if (!userId) return;
 
@@ -98,6 +104,12 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
 }
 
 async function handleSubscriptionDelete(subscription: Stripe.Subscription) {
+  const db = await getDb();
+  if (!db) {
+    console.error("Database not available");
+    return;
+  }
+
   await db
     .update(subscriptions)
     .set({

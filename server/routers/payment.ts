@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
-import { db } from "../db";
+import { getDb } from "../db";
 import { users, subscriptions } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 
@@ -17,6 +17,8 @@ export const SUBSCRIPTION_PLANS = {
 
 export const paymentRouter = router({
   getSubscription: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) return null;
     const userSub = await db.query.subscriptions.findFirst({ where: eq(subscriptions.userId, ctx.userId) });
     if (!userSub) return null;
     try {
@@ -26,6 +28,8 @@ export const paymentRouter = router({
   }),
 
   createCheckoutSession: protectedProcedure.input(z.object({ planKey: z.enum(["basic", "pro", "enterprise"]), successUrl: z.string().url(), cancelUrl: z.string().url() })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
     const user = await db.query.users.findFirst({ where: eq(users.id, ctx.userId) });
     if (!user) throw new Error("User not found");
     const plan = SUBSCRIPTION_PLANS[input.planKey];
@@ -42,6 +46,8 @@ export const paymentRouter = router({
   getPlans: publicProcedure.query(() => Object.entries(SUBSCRIPTION_PLANS).map(([key, plan]) => ({ key, name: plan.name, price: plan.price, features: plan.features }))),
 
   cancelSubscription: protectedProcedure.mutation(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
     const userSub = await db.query.subscriptions.findFirst({ where: eq(subscriptions.userId, ctx.userId) });
     if (!userSub) throw new Error("No active subscription");
     await stripe.subscriptions.update(userSub.stripeSubscriptionId, { cancel_at_period_end: true });
@@ -49,6 +55,8 @@ export const paymentRouter = router({
   }),
 
   updateSubscription: protectedProcedure.input(z.object({ planKey: z.enum(["basic", "pro", "enterprise"]) })).mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
     const userSub = await db.query.subscriptions.findFirst({ where: eq(subscriptions.userId, ctx.userId) });
     if (!userSub) throw new Error("No active subscription");
     const plan = SUBSCRIPTION_PLANS[input.planKey];
