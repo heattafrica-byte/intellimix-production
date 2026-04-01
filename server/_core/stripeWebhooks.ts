@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { Express } from "express";
-import { db } from "../../db";
+import { db } from "../db";
 import { subscriptions } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 
