@@ -72,23 +72,12 @@ export default function Home() {
             <span className="font-bold text-sm tracking-tight gradient-text">Intellimix</span>
           </div>
           <div className="flex items-center gap-3">
-            {isAuthenticated ? (
-              <Link href="/studio">
-                <Button size="sm" className="gap-2 text-xs">
-                  Open Studio
-                  <ArrowRight size={13} />
-                </Button>
-              </Link>
-            ) : (
-              <Button
-                size="sm"
-                className="gap-2 text-xs"
-                onClick={() => (window.location.href = getLoginUrl())}
-              >
-                Get Started Free
+            <Link href="/studio">
+              <Button size="sm" className="gap-2 text-xs">
+                {isAuthenticated ? "Open Studio" : "Get Started Free"}
                 <ArrowRight size={13} />
               </Button>
-            )}
+            </Link>
           </div>
         </div>
       </header>
