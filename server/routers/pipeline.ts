@@ -5,7 +5,7 @@ import { getDb } from "../db";
 import { pipelineSessions, stems } from "../../drizzle/schema";
 import { storagePut } from "../storage";
 import { invokeLLM } from "../_core/llm";
-import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
+import { publicProcedure, publicProcedure, router } from "../_core/trpc";
 import { ENV } from "../_core/env";
 
 // ── Output type → DB column mapping ──────────────────────────────────────────
@@ -96,7 +96,7 @@ const audioFeaturesSchema = z.object({
 // ── Router ────────────────────────────────────────────────────────────────────
 export const pipelineRouter = router({
   // ── Create session ──────────────────────────────────────────────────────────
-  createSession: protectedProcedure
+  createSession: publicProcedure
     .input(
       z.object({
         name: z.string().min(1).max(255),
@@ -111,7 +111,7 @@ export const pipelineRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database unavailable");
       const result = await db.insert(pipelineSessions).values({
-        userId: ctx.user.id,
+        userId: ctx.user?.id || 0, // Allow guest users with userId 0
         name: input.name,
         genre: input.genre,
         subGenre: input.subGenre,
@@ -130,7 +130,7 @@ export const pipelineRouter = router({
     }),
 
   // ── Upload stem ─────────────────────────────────────────────────────────────
-  uploadStem: protectedProcedure
+  uploadStem: publicProcedure
     .input(
       z.object({
         sessionId: z.number(),
@@ -144,25 +144,26 @@ export const pipelineRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database unavailable");
+      const userId = ctx.user?.id || 0;
       const [session] = await db
         .select()
         .from(pipelineSessions)
         .where(
           and(
             eq(pipelineSessions.id, input.sessionId),
-            eq(pipelineSessions.userId, ctx.user.id),
+            eq(pipelineSessions.userId, userId),
           ),
         )
         .limit(1);
       if (!session) throw new Error("Session not found");
       const ext = input.originalName.split(".").pop() ?? "wav";
-      const fileKey = `stems/${ctx.user.id}/${input.sessionId}/${nanoid()}.${ext}`;
+      const fileKey = `stems/${userId}/${input.sessionId}/${nanoid()}.${ext}`;
       const buffer = Buffer.from(input.base64Data, "base64");
       const { url } = await storagePut(fileKey, buffer, input.mimeType);
       const { type: stemType, category: stemCategory } = inferStemType(input.originalName);
       const insertResult = await db.insert(stems).values({
         sessionId: input.sessionId,
-        userId: ctx.user.id,
+        userId: userId,
         originalName: input.originalName,
         fileUrl: url,
         fileKey,
@@ -181,7 +182,7 @@ export const pipelineRouter = router({
     }),
 
   // ── Get upload credentials for direct S3 upload (bypasses proxy size limit) ─
-  getUploadCredentials: protectedProcedure
+  getUploadCredentials: publicProcedure
     .input(
       z.object({
         sessionId: z.number(),
@@ -207,14 +208,14 @@ export const pipelineRouter = router({
         .where(
           and(
             eq(pipelineSessions.id, input.sessionId),
-            eq(pipelineSessions.userId, ctx.user.id),
+            eq(pipelineSessions.userId, (ctx.user?.id || 0)),
           ),
         )
         .limit(1);
       if (!session) throw new Error("Session not found");
 
       const ext = input.filename.split(".").pop() ?? "wav";
-      const fileKey = `outputs/${ctx.user.id}/${input.sessionId}/${input.outputType}_${nanoid()}.${ext}`;
+      const fileKey = `outputs/${(ctx.user?.id || 0)}/${input.sessionId}/${input.outputType}_${nanoid()}.${ext}`;
 
       return {
         uploadUrl: `${ENV.forgeApiUrl.replace(/\/+$/, "")}/v1/storage/upload?path=${encodeURIComponent(fileKey)}`,
@@ -225,7 +226,7 @@ export const pipelineRouter = router({
     }),
 
   // ── Confirm direct upload and update DB ────────────────────────────────────
-  confirmUpload: protectedProcedure
+  confirmUpload: publicProcedure
     .input(
       z.object({
         sessionId: z.number(),
@@ -251,7 +252,7 @@ export const pipelineRouter = router({
         .where(
           and(
             eq(pipelineSessions.id, input.sessionId),
-            eq(pipelineSessions.userId, ctx.user.id),
+            eq(pipelineSessions.userId, (ctx.user?.id || 0)),
           ),
         )
         .limit(1);
@@ -275,7 +276,7 @@ export const pipelineRouter = router({
    * The client uses this to decide whether to show a "Resume" button and which
    * specific output types still need to be re-uploaded.
    */
-  getSessionStatus: protectedProcedure
+  getSessionStatus: publicProcedure
     .input(z.object({ sessionId: z.number() }))
     .query(async ({ ctx, input }) => {
       const db = await getDb();
@@ -286,7 +287,7 @@ export const pipelineRouter = router({
         .where(
           and(
             eq(pipelineSessions.id, input.sessionId),
-            eq(pipelineSessions.userId, ctx.user.id),
+            eq(pipelineSessions.userId, (ctx.user?.id || 0)),
           ),
         )
         .limit(1);
@@ -339,7 +340,7 @@ export const pipelineRouter = router({
    *
    * If all outputs are now present the session status is set to "complete".
    */
-  resumeSession: protectedProcedure
+  resumeSession: publicProcedure
     .input(
       z.object({
         sessionId: z.number(),
@@ -375,7 +376,7 @@ export const pipelineRouter = router({
         .where(
           and(
             eq(pipelineSessions.id, input.sessionId),
-            eq(pipelineSessions.userId, ctx.user.id),
+            eq(pipelineSessions.userId, (ctx.user?.id || 0)),
           ),
         )
         .limit(1);
@@ -431,7 +432,7 @@ export const pipelineRouter = router({
     }),
 
   // ── Analyse stems with AI ───────────────────────────────────────────────────
-  analyseStems: protectedProcedure
+  analyseStems: publicProcedure
     .input(
       z.object({
         sessionId: z.number(),
@@ -447,7 +448,7 @@ export const pipelineRouter = router({
         .where(
           and(
             eq(pipelineSessions.id, input.sessionId),
-            eq(pipelineSessions.userId, ctx.user.id),
+            eq(pipelineSessions.userId, (ctx.user?.id || 0)),
           ),
         )
         .limit(1);
@@ -595,7 +596,7 @@ Respond with ONLY a valid JSON array, no markdown, no explanation outside the JS
     }),
 
   // ── Generate master bus parameters ─────────────────────────────────────────
-  generateMasterParams: protectedProcedure
+  generateMasterParams: publicProcedure
     .input(
       z.object({
         sessionId: z.number(),
@@ -613,7 +614,7 @@ Respond with ONLY a valid JSON array, no markdown, no explanation outside the JS
         .where(
           and(
             eq(pipelineSessions.id, input.sessionId),
-            eq(pipelineSessions.userId, ctx.user.id),
+            eq(pipelineSessions.userId, (ctx.user?.id || 0)),
           ),
         )
         .limit(1);
@@ -680,7 +681,7 @@ Respond with ONLY this JSON structure (no markdown):
     }),
 
   // ── Save session outputs ────────────────────────────────────────────────────
-  saveOutputs: protectedProcedure
+  saveOutputs: publicProcedure
     .input(
       z.object({
         sessionId: z.number(),
@@ -707,7 +708,7 @@ Respond with ONLY this JSON structure (no markdown):
         .where(
           and(
             eq(pipelineSessions.id, sessionId),
-            eq(pipelineSessions.userId, ctx.user.id),
+            eq(pipelineSessions.userId, (ctx.user?.id || 0)),
           ),
         );
       await db
@@ -718,7 +719,7 @@ Respond with ONLY this JSON structure (no markdown):
     }),
 
   // ── Get session with stems ──────────────────────────────────────────────────
-  getSession: protectedProcedure
+  getSession: publicProcedure
     .input(z.object({ sessionId: z.number() }))
     .query(async ({ ctx, input }) => {
       const db = await getDb();
@@ -729,7 +730,7 @@ Respond with ONLY this JSON structure (no markdown):
         .where(
           and(
             eq(pipelineSessions.id, input.sessionId),
-            eq(pipelineSessions.userId, ctx.user.id),
+            eq(pipelineSessions.userId, (ctx.user?.id || 0)),
           ),
         )
         .limit(1);
@@ -743,19 +744,19 @@ Respond with ONLY this JSON structure (no markdown):
     }),
 
   // ── List sessions ───────────────────────────────────────────────────────────
-  listSessions: protectedProcedure.query(async ({ ctx }) => {
+  listSessions: publicProcedure.query(async ({ ctx }) => {
     const db = await getDb();
     if (!db) return [];
     return db
       .select()
       .from(pipelineSessions)
-      .where(eq(pipelineSessions.userId, ctx.user.id))
+      .where(eq(pipelineSessions.userId, (ctx.user?.id || 0)))
       .orderBy(desc(pipelineSessions.updatedAt))
       .limit(20);
   }),
 
   // ── Delete session ──────────────────────────────────────────────────────────
-  deleteSession: protectedProcedure
+  deleteSession: publicProcedure
     .input(z.object({ sessionId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
@@ -766,7 +767,7 @@ Respond with ONLY this JSON structure (no markdown):
         .where(
           and(
             eq(pipelineSessions.id, input.sessionId),
-            eq(pipelineSessions.userId, ctx.user.id),
+            eq(pipelineSessions.userId, (ctx.user?.id || 0)),
           ),
         );
       return { success: true };
