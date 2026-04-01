@@ -603,10 +603,11 @@ export default function Studio() {
 
   // ── Main pipeline ─────────────────────────────────────────────────────────────
   const startPipeline = async () => {
-    if (!isAuthenticated) {
-      window.location.href = getLoginUrl();
-      return;
-    }
+    // Allow guest/demo access for now - auth can be added later
+    // if (!isAuthenticated) {
+    //   window.location.href = getLoginUrl();
+    //   return;
+    // }
     if (stemFiles.length === 0) return;
     const name = sessionName.trim() || `Session ${new Date().toLocaleDateString()}`;
 
@@ -866,7 +867,8 @@ export default function Studio() {
    * the server) and upload them, then call resumeSession to mark the session complete.
    */
   const handleResumeSession = async (sessionIdToResume: number) => {
-    if (!isAuthenticated) return;
+    // Allow guest/demo access for now
+    // if (!isAuthenticated) return;
     setIsResuming(true);
     setResumeSessionId(sessionIdToResume);
 
