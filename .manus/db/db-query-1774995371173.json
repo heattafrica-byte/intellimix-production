@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `stems` (`id` int AUTO_INCREMENT NOT NULL, `sessionId` int NOT NULL, `userId` int NOT NULL, `originalName` varchar(255) NOT NULL, `fileUrl` text NOT NULL, `fileKey` varchar(512) NOT NULL, `fileSizeBytes` int NOT NULL DEFAULT 0, `mimeType` varchar(100) NOT NULL, `order` int NOT NULL DEFAULT 0, `stemType` varchar(100), `stemCategory` varchar(50), `processingParams` json, `processingStatus` enum('pending','processing','complete','error') NOT NULL DEFAULT 'pending', `processingError` text, `createdAt` timestamp NOT NULL DEFAULT (now()), CONSTRAINT `stems_id` PRIMARY KEY(`id`))",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 21Kj91RkvN43aBT.root --database aqxbp6qitJMzajq7XNyPip --execute CREATE TABLE IF NOT EXISTS `stems` (`id` int AUTO_INCREMENT NOT NULL, `sessionId` int NOT NULL, `userId` int NOT NULL, `originalName` varchar(255) NOT NULL, `fileUrl` text NOT NULL, `fileKey` varchar(512) NOT NULL, `fileSizeBytes` int NOT NULL DEFAULT 0, `mimeType` varchar(100) NOT NULL, `order` int NOT NULL DEFAULT 0, `stemType` varchar(100), `stemCategory` varchar(50), `processingParams` json, `processingStatus` enum('pending','processing','complete','error') NOT NULL DEFAULT 'pending', `processingError` text, `createdAt` timestamp NOT NULL DEFAULT (now()), CONSTRAINT `stems_id` PRIMARY KEY(`id`))",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 128
+}
