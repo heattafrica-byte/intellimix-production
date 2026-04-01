@@ -11,14 +11,12 @@ import "./index.css";
 const queryClient = new QueryClient();
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
-  if (!(error instanceof TRPCClientError)) return;
-  if (typeof window === "undefined") return;
-
-  const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
-
-  if (!isUnauthorized) return;
-
-  window.location.href = getLoginUrl();
+  // Disabled for now - allowing guest/demo access
+  // if (!(error instanceof TRPCClientError)) return;
+  // if (typeof window === "undefined") return;
+  // const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
+  // if (!isUnauthorized) return;
+  // window.location.href = getLoginUrl();
 };
 
 queryClient.getQueryCache().subscribe(event => {
