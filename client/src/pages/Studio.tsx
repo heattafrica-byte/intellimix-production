@@ -1071,7 +1071,10 @@ export default function Studio() {
               <Button
                 size="sm"
                 className="text-xs"
-                onClick={() => (window.location.href = getLoginUrl())}
+                onClick={() => {
+                  // Disabled OAuth redirect for demo mode
+                  // window.location.href = getLoginUrl();
+                }}
               >
                 Sign In
               </Button>
@@ -1563,7 +1566,10 @@ export default function Studio() {
                   <Button
                     size="lg"
                     className="gap-2 px-8"
-                    onClick={() => (window.location.href = getLoginUrl())}
+                    onClick={() => {
+                      // Disabled OAuth redirect for demo mode
+                      // window.location.href = getLoginUrl();
+                    }}
                   >
                     <Zap size={16} />
                     Sign In to Start
