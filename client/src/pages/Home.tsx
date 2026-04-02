@@ -340,7 +340,10 @@ export default function Home() {
                     <Button
                       size="lg"
                       className="w-full gap-2 bg-primary hover:bg-primary/90"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log("Clicked plan:", plan.name);
                         setSelectedPlan(plan.name as "Basic" | "Pro");
                         setSignupOpen(true);
                       }}

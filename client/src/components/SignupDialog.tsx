@@ -83,7 +83,19 @@ export function SignupDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog 
+      open={open} 
+      onOpenChange={(newOpen) => {
+        if (!newOpen) {
+          // Reset state when dialog closes
+          setStep("signup");
+          setUserId(null);
+          setEmail("");
+          setName("");
+        }
+        onOpenChange(newOpen);
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
