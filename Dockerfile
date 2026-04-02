@@ -7,13 +7,17 @@ RUN npm install -g pnpm
 # Copy everything first
 COPY . .
 
-# Install dependencies
+# Create .env file with default values for Vite variables
+RUN echo "VITE_APP_ID=intellimix" > .env && \
+    echo "VITE_OAUTH_PORTAL_URL=https://oauth.example.com" >> .env
+
+# Then install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Build application - environment variables are injected at runtime by Railway
+COPY . .
+
 RUN pnpm run build
 
 EXPOSE 3000
 
-# Runtime environment variables should be set by Railway or deployment platform
 CMD ["pnpm", "start"]
