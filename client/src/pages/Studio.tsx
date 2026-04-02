@@ -873,12 +873,7 @@ export default function Studio() {
     setResumeSessionId(sessionIdToResume);
 
     try {
-      // Fetch current status to know which outputs are missing
-      const status = await trpc.pipeline.getSessionStatus.query
-        ? undefined // will use the query hook below
-        : undefined;
-
-      // Use the tRPC client directly for the resume flow
+      // Use the tRPC query hook data that's already been fetched
       const statusData = sessionStatus.data;
       if (!statusData) {
         toast.error("Could not load session status");

@@ -5,7 +5,7 @@ import { getDb } from "../db";
 import { pipelineSessions, stems } from "../../drizzle/schema";
 import { storagePut } from "../storage";
 import { invokeLLM } from "../_core/llm";
-import { publicProcedure, publicProcedure, router } from "../_core/trpc";
+import { publicProcedure, router } from "../_core/trpc";
 import { ENV } from "../_core/env";
 
 // ── Output type → DB column mapping ──────────────────────────────────────────

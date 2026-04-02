@@ -74,9 +74,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
   const planKey = subscription.metadata?.planKey || "basic";
   const subscriptionId = subscription.id;
 
-  const existing = await db.query.subscriptions.findFirst({
-    where: eq(subscriptions.stripeSubscriptionId, subscriptionId),
-  });
+  const [existing] = await db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, subscriptionId)).limit(1);
 
   if (existing) {
     await db
