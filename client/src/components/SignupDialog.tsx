@@ -32,7 +32,7 @@ export function SignupDialog({
   const utils = trpc.useUtils();
 
   const signup = trpc.auth.signup.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (data: { id: number; email: string; name: string }) => {
       toast.success("Account created!");
       setUserId(data.id);
       
@@ -46,19 +46,19 @@ export function SignupDialog({
         onSignupSuccess?.();
       }
     },
-    onError: (error) => {
-      toast.error(error.message || "Signup failed");
+    onError: (error: any) => {
+      toast.error(error?.message || "Signup failed");
     },
   });
 
   const createCheckout = trpc.payment.createCheckoutSession.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (data: { sessionId: string; url: string | null }) => {
       if (data.url) {
         window.location.href = data.url;
       }
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to start checkout");
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to start checkout");
     },
   });
 

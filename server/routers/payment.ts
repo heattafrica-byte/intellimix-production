@@ -16,7 +16,7 @@ export const SUBSCRIPTION_PLANS = {
 };
 
 export const paymentRouter = router({
-  getSubscription: protectedProcedure.query(async ({ ctx }) => {
+  getSubscription: protectedProcedure.query(async ({ ctx }: any) => {
     const db = await getDb();
     if (!db || !ctx.user) return null;
     const [userSub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, ctx.user.id)).limit(1);
@@ -32,7 +32,7 @@ export const paymentRouter = router({
     if (!db || !ctx.user) throw new Error("Database not available or user not authenticated");
     const [user] = await db.select().from(users).where(eq(users.id, ctx.user.id)).limit(1);
     if (!user) throw new Error("User not found");
-    const plan = SUBSCRIPTION_PLANS[input.planKey];
+    const plan = SUBSCRIPTION_PLANS[input.planKey as keyof typeof SUBSCRIPTION_PLANS];
     let stripeCustomerId = user.stripeCustomerId;
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({ email: user.email || undefined, name: user.name || undefined });
@@ -45,7 +45,7 @@ export const paymentRouter = router({
 
   getPlans: publicProcedure.query(() => Object.entries(SUBSCRIPTION_PLANS).map(([key, plan]) => ({ key, name: plan.name, price: plan.price, features: plan.features }))),
 
-  cancelSubscription: protectedProcedure.mutation(async ({ ctx }) => {
+  cancelSubscription: protectedProcedure.mutation(async ({ ctx }: any) => {
     const db = await getDb();
     if (!db || !ctx.user) throw new Error("Database not available or user not authenticated");
     const [userSub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, ctx.user.id)).limit(1);
@@ -54,12 +54,12 @@ export const paymentRouter = router({
     return { success: true };
   }),
 
-  updateSubscription: protectedProcedure.input(z.object({ planKey: z.enum(["basic", "pro", "enterprise"]) })).mutation(async ({ ctx, input }) => {
+  updateSubscription: protectedProcedure.input(z.object({ planKey: z.enum(["basic", "pro", "enterprise"]) })).mutation(async ({ ctx, input }: any) => {
     const db = await getDb();
     if (!db || !ctx.user) throw new Error("Database not available or user not authenticated");
     const [userSub] = await db.select().from(subscriptions).where(eq(subscriptions.userId, ctx.user.id)).limit(1);
     if (!userSub) throw new Error("No active subscription");
-    const plan = SUBSCRIPTION_PLANS[input.planKey];
+    const plan = SUBSCRIPTION_PLANS[input.planKey as keyof typeof SUBSCRIPTION_PLANS];
     const sub = await stripe.subscriptions.retrieve(userSub.stripeSubscriptionId);
     await stripe.subscriptions.update(userSub.stripeSubscriptionId, { items: [{ id: sub.items.data[0].id, price: plan.priceId }], proration_behavior: "create_prorations" });
     await db.update(subscriptions).set({ planName: input.planKey }).where(eq(subscriptions.id, userSub.id));

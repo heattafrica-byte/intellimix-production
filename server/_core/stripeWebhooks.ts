@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { Express } from "express";
+import { Express, Request, Response } from "express";
 import { getDb } from "../db";
 import { subscriptions } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
@@ -11,7 +11,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 
 export function setupStripeWebhooks(app: Express) {
-  app.post("/api/webhooks/stripe", async (req, res) => {
+  app.post("/api/webhooks/stripe", async (req: Request, res: Response) => {
     const sig = req.headers["stripe-signature"];
 
     if (!sig || typeof sig !== "string") {
