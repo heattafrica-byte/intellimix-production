@@ -167,6 +167,10 @@ export default defineConfig({
   optimizeDeps: {
     disabled: "build",
   },
+  define: {
+    // Fix Vite v7 + Node v20 crypto issue by ensuring proper global handling
+    global: "globalThis",
+  },
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,

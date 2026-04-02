@@ -8,3 +8,14 @@ export const ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
 };
+
+// Warn if critical environment variables are missing in production
+if (ENV.isProduction) {
+  const requiredEnvVars = ["DATABASE_URL", "JWT_SECRET", "VITE_APP_ID"];
+  const missing = requiredEnvVars.filter((v) => !process.env[v]);
+  if (missing.length > 0) {
+    console.warn(
+      `[ENV WARNING] Missing critical environment variables in production: ${missing.join(", ")}`
+    );
+  }
+}
