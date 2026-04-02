@@ -1,0 +1,8 @@
+# Using MySQL client from terminal
+mysql -h 34.59.2.8 -u root -p
+
+# Then run:
+CREATE DATABASE intellimix;
+EXIT;
+
+mysql://root:Mrsnuffles123!@#@34.59.2.8:3306/intellimix
