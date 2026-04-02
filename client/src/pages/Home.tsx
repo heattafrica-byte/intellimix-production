@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { SignupDialog } from "@/components/SignupDialog";
 import { getLoginUrl } from "@/const";
 import { motion } from "framer-motion";
 import {
@@ -14,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Link } from "wouter";
+import { useState } from "react";
 
 const FEATURES = [
   {
@@ -58,7 +60,33 @@ const PLATFORMS = [
 ];
 
 export default function Home() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const [signupOpen, setSignupOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<"Basic" | "Pro" | null>(null);
+
+  const plans = [
+    {
+      name: "Free",
+      price: "$0",
+      desc: "Perfect for trying Intellimix",
+      features: ["2 free sessions/month", "192 kHz 32-bit processing", "Download WAV + FLAC", "Community support"],
+    },
+    {
+      name: "Basic",
+      price: "$29",
+      period: "/month",
+      desc: "For active musicians",
+      features: ["50 sessions/month", "192 kHz 32-bit processing", "All export formats", "Priority support"],
+      highlighted: true,
+    },
+    {
+      name: "Pro",
+      price: "$99",
+      period: "/month",
+      desc: "For professionals",
+      features: ["500 sessions/month", "192 kHz 32-bit processing", "All formats + stems", "Priority support", "API access"],
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -235,6 +263,91 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Pricing */}
+      <section className="py-24 border-t border-border/10">
+        <div className="container space-y-12">
+          <div className="text-center space-y-3">
+            <h2 className="text-3xl sm:text-4xl font-extrabold">Simple, transparent pricing</h2>
+            <p className="text-muted-foreground max-w-lg mx-auto">
+              Choose the plan that fits your workflow. All plans include full 192 kHz 32-bit processing and multi-format downloads.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {plans.map((plan, idx) => (
+              <motion.div
+                key={plan.name}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                className={`rounded-2xl relative flex flex-col ${
+                  plan.highlighted
+                    ? "bg-gradient-to-br from-primary/20 to-primary/5 border-2 border-primary/50 md:scale-105"
+                    : "bg-card border border-border/20"
+                }`}
+              >
+                {plan.highlighted && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">
+                      Most Popular
+                    </span>
+                  </div>
+                )}
+
+                <div className="p-6 space-y-2 flex-1">
+                  <h3 className="text-xl font-bold">{plan.name}</h3>
+                  <p className="text-xs text-muted-foreground">{plan.desc}</p>
+
+                  <div className="pt-2">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-bold">{plan.price}</span>
+                      {plan.period && <span className="text-muted-foreground text-sm">{plan.period}</span>}
+                    </div>
+                  </div>
+
+                  <ul className="space-y-2 pt-6">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <CheckCircle2 size={14} className="text-green-400 flex-shrink-0 mt-0.5" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="p-6 border-t border-border/10">
+                  {plan.name === "Free" ? (
+                    <Link href="/studio" className="block">
+                      <Button size="lg" variant="outline" className="w-full gap-2">
+                        Get Started Free
+                        <ArrowRight size={14} />
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button
+                      size="lg"
+                      className="w-full gap-2 bg-primary hover:bg-primary/90"
+                      onClick={() => {
+                        setSelectedPlan(plan.name as "Basic" | "Pro");
+                        setSignupOpen(true);
+                      }}
+                    >
+                      Start Trial
+                      <ArrowRight size={14} />
+                    </Button>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <p className="text-center text-xs text-muted-foreground">
+            All paid plans include a 7-day free trial. Cancel anytime.
+          </p>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-24 border-t border-border/10">
         <div className="container text-center space-y-6">
@@ -264,6 +377,15 @@ export default function Home() {
           <span>© {new Date().getFullYear()} Intellimix. All rights reserved.</span>
         </div>
       </footer>
+
+      <SignupDialog
+        open={signupOpen}
+        onOpenChange={setSignupOpen}
+        plan={selectedPlan || undefined}
+        onSignupSuccess={() => {
+          setSelectedPlan(null);
+        }}
+      />
     </div>
   );
 }
