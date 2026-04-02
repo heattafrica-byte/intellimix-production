@@ -4,20 +4,16 @@ WORKDIR /app
 
 RUN npm install -g pnpm
 
-# Copy everything first
+# Copy everything
 COPY . .
 
-# Create .env file with default values for Vite variables
-RUN echo "VITE_APP_ID=intellimix" > .env && \
-    echo "VITE_OAUTH_PORTAL_URL=https://oauth.example.com" >> .env
-
-# Then install dependencies
+# Install dependencies (environment variables injected at runtime)
 RUN pnpm install --frozen-lockfile
 
-COPY . .
-
+# Build
 RUN pnpm run build
 
 EXPOSE 3000
 
+# Cloud Run injects environment variables at runtime
 CMD ["pnpm", "start"]
