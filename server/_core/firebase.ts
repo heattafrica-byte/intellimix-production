@@ -1,42 +1,53 @@
 import * as admin from "firebase-admin";
 
-// Parse Firebase admin credentials from environment
-const firebaseCredentials = (() => {
+let isInitialized = false;
+
+/**
+ * Lazy-load Firebase Admin SDK initialization
+ */
+function initializeFirebase() {
+  if (isInitialized || admin.apps.length > 0) {
+    return;
+  }
+
   try {
     const keyJson = process.env.FIREBASE_ADMIN_KEY;
     if (!keyJson) {
-      console.warn("[Firebase] FIREBASE_ADMIN_KEY not set, Firebase Auth will not work");
-      return null;
+      console.warn("[Firebase] FIREBASE_ADMIN_KEY not set");
+      return;
     }
-    return JSON.parse(keyJson);
-  } catch (error) {
-    console.error("[Firebase] Failed to parse FIREBASE_ADMIN_KEY:", error);
-    return null;
-  }
-})();
 
-// Initialize Firebase Admin SDK
-if (!admin.apps.length && firebaseCredentials) {
-  admin.initializeApp({
-    credential: admin.credential.cert(firebaseCredentials),
-    projectId: firebaseCredentials.project_id,
-  });
-  console.log("[Firebase] Admin SDK initialized successfully");
-} else if (!firebaseCredentials) {
-  console.warn("[Firebase] Credentials not available, running without Firebase Auth");
+    const credentials = JSON.parse(keyJson);
+    
+    admin.initializeApp({
+      credential: admin.credential.cert(credentials),
+      projectId: credentials.project_id,
+    });
+
+    isInitialized = true;
+    console.log("[Firebase] Admin SDK initialized successfully");
+  } catch (error) {
+    console.error("[Firebase] Initialization failed:", error instanceof Error ? error.message : error);
+  }
 }
 
-export const firebaseApp = admin.app();
-export const firebaseAuth = admin.auth();
+// Initialize on first use, not on import
+export function getFirebaseAuth() {
+  if (!isInitialized) {
+    initializeFirebase();
+  }
+  return admin.auth();
+}
 
 /**
  * Verify Firebase ID token
  */
 export async function verifyIdToken(idToken: string) {
   try {
-    return await firebaseAuth.verifyIdToken(idToken);
+    const auth = getFirebaseAuth();
+    return await auth.verifyIdToken(idToken);
   } catch (error) {
-    console.error("[Firebase] Token verification failed:", error);
+    console.error("[Firebase] Token verification failed:", error instanceof Error ? error.message : error);
     throw new Error("Invalid token");
   }
 }
@@ -46,9 +57,10 @@ export async function verifyIdToken(idToken: string) {
  */
 export async function getUserByUid(uid: string) {
   try {
-    return await firebaseAuth.getUser(uid);
+    const auth = getFirebaseAuth();
+    return await auth.getUser(uid);
   } catch (error) {
-    console.error("[Firebase] Failed to get user:", error);
+    console.error("[Firebase] Failed to get user:", error instanceof Error ? error.message : error);
     return null;
   }
 }
@@ -58,9 +70,10 @@ export async function getUserByUid(uid: string) {
  */
 export async function createSessionToken(uid: string, customClaims: Record<string, any> = {}) {
   try {
-    return await firebaseAuth.createCustomToken(uid, customClaims);
+    const auth = getFirebaseAuth();
+    return await auth.createCustomToken(uid, customClaims);
   } catch (error) {
-    console.error("[Firebase] Failed to create session token:", error);
+    console.error("[Firebase] Failed to create session token:", error instanceof Error ? error.message : error);
     throw error;
   }
 }

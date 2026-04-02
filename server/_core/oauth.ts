@@ -2,7 +2,7 @@ import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
-import { verifyIdToken, createSessionToken as createFirebaseSessionToken } from "./firebase";
+import { verifyIdToken, createSessionToken } from "./firebase";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
@@ -40,7 +40,7 @@ export function registerOAuthRoutes(app: Express) {
       });
 
       // Create session token
-      const sessionToken = await createFirebaseSessionToken(uid, {
+      const sessionToken = await createSessionToken(uid, {
         name: name || "",
       });
 
@@ -85,7 +85,7 @@ export function registerOAuthRoutes(app: Express) {
       });
 
       // Create session token
-      const sessionToken = await createFirebaseSessionToken(uid, {
+      const sessionToken = await createSessionToken(uid, {
         name: name || "",
       });
 
