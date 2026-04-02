@@ -57,6 +57,34 @@ export const appRouter = router({
         return { id: userId, email: input.email, name: input.name };
       }),
     
+    login: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database unavailable");
+        
+        // Find user by email
+        const existing = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, input.email))
+          .limit(1);
+        
+        if (existing.length === 0) {
+          throw new Error("User not found");
+        }
+        
+        const user = existing[0];
+        
+        // Create session cookie
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, user.openId, { ...cookieOptions, httpOnly: true });
+        
+        return { id: user.id, email: user.email, name: user.name };
+      }),
+    
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });

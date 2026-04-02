@@ -1,6 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { SignupDialog } from "@/components/SignupDialog";
+import { LoginDialog } from "@/components/LoginDialog";
 import { getLoginUrl } from "@/const";
 import { motion } from "framer-motion";
 import {
@@ -62,6 +63,7 @@ const PLATFORMS = [
 export default function Home() {
   const { isAuthenticated, user } = useAuth();
   const [signupOpen, setSignupOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"Basic" | "Pro" | null>(null);
 
   const plans = [
@@ -100,6 +102,16 @@ export default function Home() {
             <span className="font-bold text-sm tracking-tight gradient-text">Intellimix</span>
           </div>
           <div className="flex items-center gap-3">
+            {!isAuthenticated && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="gap-2 text-xs"
+                onClick={() => setLoginOpen(true)}
+              >
+                Sign In
+              </Button>
+            )}
             <Link href="/studio">
               <Button size="sm" className="gap-2 text-xs">
                 {isAuthenticated ? "Open Studio" : "Get Started Free"}
@@ -384,6 +396,15 @@ export default function Home() {
         plan={selectedPlan || undefined}
         onSignupSuccess={() => {
           setSelectedPlan(null);
+        }}
+      />
+
+      <LoginDialog
+        open={loginOpen}
+        onOpenChange={setLoginOpen}
+        onLoginSuccess={() => {
+          // Redirect to studio on successful login
+          window.location.href = "/studio";
         }}
       />
     </div>
