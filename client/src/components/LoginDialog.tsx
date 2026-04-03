@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -7,10 +6,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Mail } from "lucide-react";
+import { Chrome, Github } from "lucide-react";
 
 interface LoginDialogProps {
   open: boolean;
@@ -23,79 +21,59 @@ export function LoginDialog({
   onOpenChange,
   onLoginSuccess,
 }: LoginDialogProps) {
-  const [email, setEmail] = useState("");
-  const utils = trpc.useUtils();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const login = trpc.auth.login.useMutation({
-    onSuccess: () => {
-      toast.success("Signed in successfully! 🎉");
-      utils.auth.me.invalidate();
-      setEmail("");
-      onOpenChange(false);
-      onLoginSuccess?.();
-    },
-    onError: (error) => {
-      toast.error(error.message || "Sign in failed. User not found.");
-    },
-  });
+  const handleGoogleLogin = () => {
+    setIsLoading(true);
+    // Redirect to Firebase OAuth endpoint
+    const oauthUrl = new URL(window.location.origin + "/api/oauth/callback");
+    oauthUrl.searchParams.set("provider", "google");
+    window.location.href = oauthUrl.toString();
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) {
-      toast.error("Please enter your email");
-      return;
-    }
-    login.mutate({ email });
+  const handleGitHubLogin = () => {
+    setIsLoading(true);
+    // Redirect to Firebase OAuth endpoint
+    const oauthUrl = new URL(window.location.origin + "/api/oauth/callback");
+    oauthUrl.searchParams.set("provider", "github");
+    window.location.href = oauthUrl.toString();
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Sign In to Your Account</DialogTitle>
+          <DialogTitle>Sign In to Intellimix</DialogTitle>
           <DialogDescription>
-            Enter your email to access your Intellimix account and saved projects.
+            Use your Google or GitHub account to sign in securely.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Email</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <Input
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="pl-10"
-                disabled={login.isPending}
-                autoFocus
-              />
-            </div>
-          </div>
-
+        <div className="space-y-3">
           <Button
-            type="submit"
-            className="w-full"
-            disabled={login.isPending}
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+            variant="outline"
+            className="w-full gap-2"
           >
-            {login.isPending ? "Signing in..." : "Sign In"}
+            <Chrome size={18} />
+            Sign in with Google
           </Button>
 
-          <p className="text-xs text-muted-foreground text-center">
-            Don't have an account?{" "}
-            <button
-              type="button"
-              className="text-primary hover:underline font-medium"
-              onClick={() => {
-                onOpenChange(false);
-              }}
-            >
-              Sign up for free
-            </button>
+          <Button
+            onClick={handleGitHubLogin}
+            disabled={isLoading}
+            variant="outline"
+            className="w-full gap-2"
+          >
+            <Github size={18} />
+            Sign in with GitHub
+          </Button>
+
+          <p className="text-xs text-muted-foreground text-center pt-2">
+            Your account is secured by Firebase Authentication.
           </p>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
