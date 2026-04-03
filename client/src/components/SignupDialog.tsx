@@ -30,7 +30,7 @@ export function SignupDialog({
   const handleGoogleSignup = async () => {
     try {
       setIsLoading(true);
-      const app = initializeFirebase();
+      const app = await initializeFirebase();
       const auth = getAuth(app);
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
@@ -64,7 +64,7 @@ export function SignupDialog({
   const handleGitHubSignup = async () => {
     try {
       setIsLoading(true);
-      const app = initializeFirebase();
+      const app = await initializeFirebase();
       const auth = getAuth(app);
       const provider = new GithubAuthProvider();
       const result = await signInWithPopup(auth, provider);

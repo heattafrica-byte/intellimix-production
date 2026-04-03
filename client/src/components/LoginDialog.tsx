@@ -28,7 +28,7 @@ export function LoginDialog({
   const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);
-      const app = initializeFirebase();
+      const app = await initializeFirebase();
       const auth = getAuth(app);
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
@@ -59,7 +59,7 @@ export function LoginDialog({
   const handleGitHubLogin = async () => {
     try {
       setIsLoading(true);
-      const app = initializeFirebase();
+      const app = await initializeFirebase();
       const auth = getAuth(app);
       const provider = new GithubAuthProvider();
       const result = await signInWithPopup(auth, provider);
