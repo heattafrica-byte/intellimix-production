@@ -9,6 +9,8 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { Chrome, Github } from "lucide-react";
+import { getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider } from "firebase/auth";
+import { initializeFirebase } from "@/_core/firebase";
 
 interface LoginDialogProps {
   open: boolean;
@@ -23,20 +25,66 @@ export function LoginDialog({
 }: LoginDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleLogin = () => {
-    setIsLoading(true);
-    // Redirect to Firebase OAuth endpoint
-    const oauthUrl = new URL(window.location.origin + "/api/oauth/callback");
-    oauthUrl.searchParams.set("provider", "google");
-    window.location.href = oauthUrl.toString();
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoading(true);
+      const app = initializeFirebase();
+      const auth = getAuth(app);
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const idToken = await result.user.getIdToken();
+      
+      // Send token to backend
+      const response = await fetch("/api/oauth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+      
+      if (response.ok) {
+        onOpenChange(false);
+        onLoginSuccess?.();
+        toast.success("Signed in successfully");
+      } else {
+        toast.error("Sign in failed");
+      }
+    } catch (error) {
+      console.error("Google sign-in failed:", error);
+      toast.error("Google sign-in failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleGitHubLogin = () => {
-    setIsLoading(true);
-    // Redirect to Firebase OAuth endpoint
-    const oauthUrl = new URL(window.location.origin + "/api/oauth/callback");
-    oauthUrl.searchParams.set("provider", "github");
-    window.location.href = oauthUrl.toString();
+  const handleGitHubLogin = async () => {
+    try {
+      setIsLoading(true);
+      const app = initializeFirebase();
+      const auth = getAuth(app);
+      const provider = new GithubAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const idToken = await result.user.getIdToken();
+      
+      // Send token to backend
+      const response = await fetch("/api/oauth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+      
+      if (response.ok) {
+        onOpenChange(false);
+        onLoginSuccess?.();
+        toast.success("Signed in successfully");
+      } else {
+        toast.error("Sign in failed");
+      }
+    } catch (error) {
+      console.error("GitHub sign-in failed:", error);
+      toast.error("GitHub sign-in failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

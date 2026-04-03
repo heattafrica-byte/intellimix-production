@@ -9,6 +9,8 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { Chrome, Github } from "lucide-react";
+import { getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider } from "firebase/auth";
+import { initializeFirebase } from "@/_core/firebase";
 
 interface SignupDialogProps {
   open: boolean;
@@ -25,26 +27,72 @@ export function SignupDialog({
 }: SignupDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleSignup = () => {
-    setIsLoading(true);
-    // Redirect to Firebase OAuth endpoint with plan parameter if provided
-    const oauthUrl = new URL(window.location.origin + "/api/oauth/callback");
-    oauthUrl.searchParams.set("provider", "google");
-    if (plan) {
-      oauthUrl.searchParams.set("plan", plan.toLowerCase());
+  const handleGoogleSignup = async () => {
+    try {
+      setIsLoading(true);
+      const app = initializeFirebase();
+      const auth = getAuth(app);
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const idToken = await result.user.getIdToken();
+      
+      // Send token to backend with plan if provided
+      const response = await fetch("/api/oauth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          idToken,
+          plan: plan?.toLowerCase(),
+        }),
+      });
+      
+      if (response.ok) {
+        onOpenChange(false);
+        onSignupSuccess?.();
+        toast.success("Account created successfully");
+      } else {
+        toast.error("Sign up failed");
+      }
+    } catch (error) {
+      console.error("Google sign-up failed:", error);
+      toast.error("Google sign-up failed");
+    } finally {
+      setIsLoading(false);
     }
-    window.location.href = oauthUrl.toString();
   };
 
-  const handleGitHubSignup = () => {
-    setIsLoading(true);
-    // Redirect to Firebase OAuth endpoint with plan parameter if provided
-    const oauthUrl = new URL(window.location.origin + "/api/oauth/callback");
-    oauthUrl.searchParams.set("provider", "github");
-    if (plan) {
-      oauthUrl.searchParams.set("plan", plan.toLowerCase());
+  const handleGitHubSignup = async () => {
+    try {
+      setIsLoading(true);
+      const app = initializeFirebase();
+      const auth = getAuth(app);
+      const provider = new GithubAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const idToken = await result.user.getIdToken();
+      
+      // Send token to backend with plan if provided
+      const response = await fetch("/api/oauth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          idToken,
+          plan: plan?.toLowerCase(),
+        }),
+      });
+      
+      if (response.ok) {
+        onOpenChange(false);
+        onSignupSuccess?.();
+        toast.success("Account created successfully");
+      } else {
+        toast.error("Sign up failed");
+      }
+    } catch (error) {
+      console.error("GitHub sign-up failed:", error);
+      toast.error("GitHub sign-up failed");
+    } finally {
+      setIsLoading(false);
     }
-    window.location.href = oauthUrl.toString();
   };
 
   return (
