@@ -1,22 +1,21 @@
 import { publicProcedure, router } from "../_core/trpc";
-import * as db from "../db";
-import mysql from "mysql2/promise";
+import { getDb } from "../db";
 
 export const initRouter = router({
   initializeSchema: publicProcedure.mutation(async () => {
-    if (!process.env.DATABASE_URL) {
+    const database = await getDb();
+    
+    if (!database) {
       return { 
         status: "error", 
-        message: "DATABASE_URL not configured" 
+        message: "Database not connected" 
       };
     }
 
-    const connection = await mysql.createConnection(process.env.DATABASE_URL);
-    
     try {
-      console.log("[Init] ✓ Database connection established");
+      console.log("[Init] Getting database connection...");
 
-      // Create each table individually
+      // Create each table individually using the Drizzle connection
       const tables = [
         {
           name: "users",
@@ -159,16 +158,19 @@ export const initRouter = router({
         }
       ];
 
+      let created = 0;
       for (const table of tables) {
         try {
           console.log(`[Init] Creating table: ${table.name}...`);
-          await connection.execute(table.sql);
+          await database.run.query(table.sql);
+          created++;
           console.log(`[Init] ✓ Table ${table.name} created`);
         } catch (error) {
           const msg = error instanceof Error ? error.message : String(error);
           if (msg.includes("already exists")) {
             console.log(`[Init] ℹ Table ${table.name} already exists`);
           } else {
+            console.error(`[Init] Error creating ${table.name}:`, msg);
             throw error;
           }
         }
@@ -176,7 +178,7 @@ export const initRouter = router({
 
       return {
         status: "success",
-        message: "Database schema initialized successfully - all 8 tables created"
+        message: `Database schema initialized - ${created} tables created/verified`
       };
     } catch (error) {
       console.error("[Init] Error:", error);
@@ -184,8 +186,6 @@ export const initRouter = router({
         status: "error", 
         message: error instanceof Error ? error.message : "Unknown error"
       };
-    } finally {
-      await connection.end();
     }
   })
 });
