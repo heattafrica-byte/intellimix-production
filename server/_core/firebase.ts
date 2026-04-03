@@ -3,21 +3,26 @@ import * as admin from "firebase-admin";
 let isInitialized = false;
 
 /**
- * Lazy-load Firebase Admin SDK initialization
+ * Initialize Firebase Admin SDK - MUST succeed on first call
  */
 function initializeFirebase() {
   if (isInitialized || admin.apps.length > 0) {
     return;
   }
 
-  try {
-    const keyJson = process.env.FIREBASE_ADMIN_KEY;
-    if (!keyJson) {
-      console.warn("[Firebase] FIREBASE_ADMIN_KEY not set");
-      return;
-    }
+  const keyJson = process.env.FIREBASE_ADMIN_KEY;
+  if (!keyJson) {
+    const error = "[Firebase] FIREBASE_ADMIN_KEY environment variable is not set - authentication will fail";
+    console.error(error);
+    throw new Error(error);
+  }
 
+  try {
     const credentials = JSON.parse(keyJson);
+    
+    if (!credentials.project_id || !credentials.private_key || !credentials.client_email) {
+      throw new Error("Firebase credential JSON is missing required fields: project_id, private_key, or client_email");
+    }
     
     admin.initializeApp({
       credential: admin.credential.cert(credentials),
@@ -25,9 +30,12 @@ function initializeFirebase() {
     });
 
     isInitialized = true;
-    console.log("[Firebase] Admin SDK initialized successfully");
+    console.log(`[Firebase] Admin SDK initialized successfully for project: ${credentials.project_id}`);
   } catch (error) {
-    console.error("[Firebase] Initialization failed:", error instanceof Error ? error.message : error);
+    const message = error instanceof Error ? error.message : String(error);
+    const fullError = `[Firebase] Initialization failed: ${message}`;
+    console.error(fullError);
+    throw new Error(fullError);
   }
 }
 
@@ -36,6 +44,11 @@ export function getFirebaseAuth() {
   if (!isInitialized) {
     initializeFirebase();
   }
+  
+  if (admin.apps.length === 0) {
+    throw new Error("Firebase app not initialized");
+  }
+  
   return admin.auth();
 }
 

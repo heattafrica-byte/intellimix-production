@@ -63,17 +63,21 @@ export function registerOAuthRoutes(app: Express) {
     const { idToken } = req.body;
 
     if (!idToken) {
+      console.error("[OAuth] idToken missing from request body");
       res.status(400).json({ error: "idToken is required" });
       return;
     }
 
     try {
+      console.log("[OAuth] Verifying token...");
       // Verify Firebase ID token
       const decodedToken = await verifyIdToken(idToken);
       const uid = decodedToken.uid;
       const email = decodedToken.email || null;
       const name = decodedToken.name || null;
       const provider = decodedToken.firebase?.sign_in_provider || "unknown";
+
+      console.log(`[OAuth] Token verified for user: ${uid} (${provider})`);
 
       // Create or update user in database
       await db.upsertUser({
@@ -93,10 +97,16 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      res.json({ success: true, sessionToken });
+      console.log(`[OAuth] Session created for user: ${uid}`);
+      res.json({ success: true, sessionToken, uid, email, name });
     } catch (error) {
-      console.error("[OAuth] Token verification failed", error);
-      res.status(401).json({ error: "Token verification failed" });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("[OAuth] Token verification failed:", errorMessage);
+      console.error("[OAuth] Full error:", error);
+      res.status(401).json({ 
+        error: "Token verification failed",
+        details: errorMessage,
+      });
     }
   });
 }

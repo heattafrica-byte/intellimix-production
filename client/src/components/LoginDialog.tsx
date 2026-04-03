@@ -41,6 +41,8 @@ export function LoginDialog({
       const result = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await result.user.getIdToken();
       
+      console.log("[LoginDialog] Got Firebase token, sending to backend...");
+      
       // Send token to backend
       const response = await fetch("/api/oauth/verify", {
         method: "POST",
@@ -48,17 +50,21 @@ export function LoginDialog({
         body: JSON.stringify({ idToken }),
       });
       
+      const data = await response.json();
+      
       if (response.ok) {
+        console.log("[LoginDialog] Login successful:", data);
         setEmail("");
         setPassword("");
         onOpenChange(false);
         onLoginSuccess?.();
         toast.success("Signed in successfully");
       } else {
-        toast.error("Sign in failed");
+        console.error("[LoginDialog] Backend error:", data);
+        toast.error(data.details || data.error || "Sign in failed");
       }
     } catch (error: any) {
-      console.error("Email sign-in failed:", error);
+      console.error("[LoginDialog] Email sign-in failed:", error);
       toast.error(error.message || "Email sign-in failed");
     } finally {
       setIsLoading(false);
@@ -74,6 +80,8 @@ export function LoginDialog({
       const result = await signInWithPopup(auth, provider);
       const idToken = await result.user.getIdToken();
       
+      console.log("[LoginDialog] Got Google token, sending to backend...");
+      
       // Send token to backend
       const response = await fetch("/api/oauth/verify", {
         method: "POST",
@@ -81,16 +89,20 @@ export function LoginDialog({
         body: JSON.stringify({ idToken }),
       });
       
+      const data = await response.json();
+      
       if (response.ok) {
+        console.log("[LoginDialog] Google login successful:", data);
         onOpenChange(false);
         onLoginSuccess?.();
         toast.success("Signed in successfully");
       } else {
-        toast.error("Sign in failed");
+        console.error("[LoginDialog] Backend error:", data);
+        toast.error(data.details || data.error || "Sign in failed");
       }
-    } catch (error) {
-      console.error("Google sign-in failed:", error);
-      toast.error("Google sign-in failed");
+    } catch (error: any) {
+      console.error("[LoginDialog] Google sign-in failed:", error);
+      toast.error(error.message || "Google sign-in failed");
     } finally {
       setIsLoading(false);
     }
@@ -105,6 +117,8 @@ export function LoginDialog({
       const result = await signInWithPopup(auth, provider);
       const idToken = await result.user.getIdToken();
       
+      console.log("[LoginDialog] Got GitHub token, sending to backend...");
+      
       // Send token to backend
       const response = await fetch("/api/oauth/verify", {
         method: "POST",
@@ -112,16 +126,20 @@ export function LoginDialog({
         body: JSON.stringify({ idToken }),
       });
       
+      const data = await response.json();
+      
       if (response.ok) {
+        console.log("[LoginDialog] GitHub login successful:", data);
         onOpenChange(false);
         onLoginSuccess?.();
         toast.success("Signed in successfully");
       } else {
-        toast.error("Sign in failed");
+        console.error("[LoginDialog] Backend error:", data);
+        toast.error(data.details || data.error || "Sign in failed");
       }
-    } catch (error) {
-      console.error("GitHub sign-in failed:", error);
-      toast.error("GitHub sign-in failed");
+    } catch (error: any) {
+      console.error("[LoginDialog] GitHub sign-in failed:", error);
+      toast.error(error.message || "GitHub sign-in failed");
     } finally {
       setIsLoading(false);
     }

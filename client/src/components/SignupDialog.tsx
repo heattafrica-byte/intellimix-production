@@ -48,6 +48,8 @@ export function SignupDialog({
       const result = await createUserWithEmailAndPassword(auth, email, password);
       const idToken = await result.user.getIdToken();
       
+      console.log("[SignupDialog] Got Firebase token, sending to backend...");
+      
       // Send token to backend with plan
       const response = await fetch("/api/oauth/verify", {
         method: "POST",
@@ -58,7 +60,10 @@ export function SignupDialog({
         }),
       });
       
+      const data = await response.json();
+      
       if (response.ok) {
+        console.log("[SignupDialog] Signup successful:", data);
         setEmail("");
         setPassword("");
         setConfirmPassword("");
@@ -66,10 +71,11 @@ export function SignupDialog({
         onSignupSuccess?.();
         toast.success("Account created successfully");
       } else {
-        toast.error("Sign up failed");
+        console.error("[SignupDialog] Backend error:", data);
+        toast.error(data.details || data.error || "Sign up failed");
       }
     } catch (error: any) {
-      console.error("Email sign-up failed:", error);
+      console.error("[SignupDialog] Email sign-up failed:", error);
       toast.error(error.message || "Email sign-up failed");
     } finally {
       setIsLoading(false);
@@ -85,6 +91,8 @@ export function SignupDialog({
       const result = await signInWithPopup(auth, provider);
       const idToken = await result.user.getIdToken();
       
+      console.log("[SignupDialog] Got Google token, sending to backend...");
+      
       // Send token to backend with plan if provided
       const response = await fetch("/api/oauth/verify", {
         method: "POST",
@@ -95,16 +103,20 @@ export function SignupDialog({
         }),
       });
       
+      const data = await response.json();
+      
       if (response.ok) {
+        console.log("[SignupDialog] Google signup successful:", data);
         onOpenChange(false);
         onSignupSuccess?.();
         toast.success("Account created successfully");
       } else {
-        toast.error("Sign up failed");
+        console.error("[SignupDialog] Backend error:", data);
+        toast.error(data.details || data.error || "Sign up failed");
       }
-    } catch (error) {
-      console.error("Google sign-up failed:", error);
-      toast.error("Google sign-up failed");
+    } catch (error: any) {
+      console.error("[SignupDialog] Google sign-up failed:", error);
+      toast.error(error.message || "Google sign-up failed");
     } finally {
       setIsLoading(false);
     }
@@ -119,6 +131,8 @@ export function SignupDialog({
       const result = await signInWithPopup(auth, provider);
       const idToken = await result.user.getIdToken();
       
+      console.log("[SignupDialog] Got GitHub token, sending to backend...");
+      
       // Send token to backend with plan if provided
       const response = await fetch("/api/oauth/verify", {
         method: "POST",
@@ -129,16 +143,20 @@ export function SignupDialog({
         }),
       });
       
+      const data = await response.json();
+      
       if (response.ok) {
+        console.log("[SignupDialog] GitHub signup successful:", data);
         onOpenChange(false);
         onSignupSuccess?.();
         toast.success("Account created successfully");
       } else {
-        toast.error("Sign up failed");
+        console.error("[SignupDialog] Backend error:", data);
+        toast.error(data.details || data.error || "Sign up failed");
       }
-    } catch (error) {
-      console.error("GitHub sign-up failed:", error);
-      toast.error("GitHub sign-up failed");
+    } catch (error: any) {
+      console.error("[SignupDialog] GitHub sign-up failed:", error);
+      toast.error(error.message || "GitHub sign-up failed");
     } finally {
       setIsLoading(false);
     }
