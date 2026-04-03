@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -8,8 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Chrome, Github } from "lucide-react";
-import { getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider } from "firebase/auth";
+import { Chrome, Github, Mail } from "lucide-react";
+import { getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, signInWithEmailAndPassword } from "firebase/auth";
 import { initializeFirebase } from "@/_core/firebase";
 
 interface LoginDialogProps {
@@ -24,6 +25,45 @@ export function LoginDialog({
   onLoginSuccess,
 }: LoginDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [useEmail, setUseEmail] = useState(false);
+
+  const handleEmailLogin = async () => {
+    if (!email || !password) {
+      toast.error("Please enter email and password");
+      return;
+    }
+    try {
+      setIsLoading(true);
+      const app = await initializeFirebase();
+      const auth = getAuth(app);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await result.user.getIdToken();
+      
+      // Send token to backend
+      const response = await fetch("/api/oauth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+      
+      if (response.ok) {
+        setEmail("");
+        setPassword("");
+        onOpenChange(false);
+        onLoginSuccess?.();
+        toast.success("Signed in successfully");
+      } else {
+        toast.error("Sign in failed");
+      }
+    } catch (error: any) {
+      console.error("Email sign-in failed:", error);
+      toast.error(error.message || "Email sign-in failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     try {
@@ -93,30 +133,80 @@ export function LoginDialog({
         <DialogHeader>
           <DialogTitle>Sign In to Intellimix</DialogTitle>
           <DialogDescription>
-            Use your Google or GitHub account to sign in securely.
+            {useEmail ? "Sign in with your email and password" : "Use your Google or GitHub account"}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
-          <Button
-            onClick={handleGoogleLogin}
-            disabled={isLoading}
-            variant="outline"
-            className="w-full gap-2"
-          >
-            <Chrome size={18} />
-            Sign in with Google
-          </Button>
+          {useEmail ? (
+            <>
+              <Input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+              />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+              />
+              <Button
+                onClick={handleEmailLogin}
+                disabled={isLoading}
+                className="w-full gap-2"
+              >
+                <Mail size={18} />
+                Sign in with Email
+              </Button>
+              <Button
+                onClick={() => {
+                  setUseEmail(false);
+                  setEmail("");
+                  setPassword("");
+                }}
+                disabled={isLoading}
+                variant="outline"
+                className="w-full text-xs"
+              >
+                Use OAuth instead
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={handleGoogleLogin}
+                disabled={isLoading}
+                variant="outline"
+                className="w-full gap-2"
+              >
+                <Chrome size={18} />
+                Sign in with Google
+              </Button>
 
-          <Button
-            onClick={handleGitHubLogin}
-            disabled={isLoading}
-            variant="outline"
-            className="w-full gap-2"
-          >
-            <Github size={18} />
-            Sign in with GitHub
-          </Button>
+              <Button
+                onClick={handleGitHubLogin}
+                disabled={isLoading}
+                variant="outline"
+                className="w-full gap-2"
+              >
+                <Github size={18} />
+                Sign in with GitHub
+              </Button>
+
+              <Button
+                onClick={() => setUseEmail(true)}
+                disabled={isLoading}
+                variant="outline"
+                className="w-full text-xs"
+              >
+                Sign in with Email
+              </Button>
+            </>
+          )}
 
           <p className="text-xs text-muted-foreground text-center pt-2">
             Your account is secured by Firebase Authentication.
