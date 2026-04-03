@@ -4,8 +4,6 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/intellimix:$COMMIT_SHA'
-      - '-t'
       - 'gcr.io/$PROJECT_ID/intellimix:latest'
       - '.'
 
@@ -13,7 +11,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'gcr.io/$PROJECT_ID/intellimix:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/intellimix:latest'
 
   # Step 3: Deploy to Cloud Run with secrets from Secret Manager
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -22,7 +20,7 @@ steps:
       - '-c'
       - |
         gcloud run deploy intellimix \
-          --image=gcr.io/$PROJECT_ID/intellimix:$COMMIT_SHA \
+          --image=gcr.io/$PROJECT_ID/intellimix:latest \
           --region=europe-west1 \
           --platform=managed \
           --allow-unauthenticated \
@@ -34,7 +32,6 @@ steps:
           --set-secrets=DATABASE_URL=DATABASE_URL:latest,JWT_SECRET=JWT_SECRET:latest,OAUTH_SERVER_URL=OAUTH_SERVER_URL:latest,OWNER_OPEN_ID=OWNER_OPEN_ID:latest,FIREBASE_ADMIN_KEY=FIREBASE_ADMIN_KEY:latest,STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest,STRIPE_PUBLISHABLE_KEY=STRIPE_PUBLISHABLE_KEY:latest,STRIPE_WEBHOOK_SECRET=STRIPE_WEBHOOK_SECRET:latest,STRIPE_PRICE_BASIC=STRIPE_PRICE_BASIC:latest,STRIPE_PRICE_PRO=STRIPE_PRICE_PRO:latest,STRIPE_PRICE_ENTERPRISE=STRIPE_PRICE_ENTERPRISE:latest,AWS_ACCESS_KEY_ID=AWS_ACCESS_KEY_ID:latest,AWS_SECRET_ACCESS_KEY=AWS_SECRET_ACCESS_KEY:latest,AWS_REGION=AWS_REGION:latest,AWS_S3_BUCKET=AWS_S3_BUCKET:latest
 
 images:
-  - 'gcr.io/$PROJECT_ID/intellimix:$COMMIT_SHA'
   - 'gcr.io/$PROJECT_ID/intellimix:latest'
 
 options:
