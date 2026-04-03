@@ -1,4 +1,5 @@
 import { publicProcedure, router } from "../_core/trpc";
+import { initializeDatabase } from "../_core/initDb";
 
 export const initRouter = router({
   health: publicProcedure.query(async () => {
@@ -9,9 +10,11 @@ export const initRouter = router({
   }),
 
   initializeSchema: publicProcedure.mutation(async () => {
+    console.log("[Init] User requested database initialization");
+    const result = await initializeDatabase();
     return {
-      status: "success",
-      message: "Init endpoint ready - use direct SQL client to create tables"
+      status: result.success ? "success" : "error",
+      ...result
     };
   })
 });
