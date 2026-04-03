@@ -13,7 +13,10 @@ RUN pnpm install --frozen-lockfile
 # Build
 RUN pnpm run build
 
-EXPOSE 3000
+EXPOSE 8080
+
+# Cloud Run expects PORT env var, default to 8080
+ENV PORT=8080
 
 # Cloud Run injects environment variables at runtime
 CMD ["pnpm", "start"]
