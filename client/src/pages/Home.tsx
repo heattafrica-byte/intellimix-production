@@ -101,23 +101,37 @@ export default function Home() {
             </div>
             <span className="font-bold text-sm tracking-tight gradient-text">Intellimix</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {!isAuthenticated && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="gap-2 text-xs"
-                onClick={() => setLoginOpen(true)}
-              >
-                Sign In
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="gap-2 text-xs"
+                  onClick={() => setLoginOpen(true)}
+                >
+                  Sign In
+                </Button>
+                <Button
+                  size="sm"
+                  className="gap-2 text-xs bg-primary hover:bg-primary/90"
+                  onClick={() => {
+                    setSelectedPlan(null);
+                    setSignupOpen(true);
+                  }}
+                >
+                  Sign Up
+                </Button>
+              </>
             )}
-            <Link href="/studio">
-              <Button size="sm" className="gap-2 text-xs">
-                {isAuthenticated ? "Open Studio" : "Get Started Free"}
-                <ArrowRight size={13} />
-              </Button>
-            </Link>
+            {isAuthenticated && (
+              <Link href="/studio">
+                <Button size="sm" className="gap-2 text-xs">
+                  Open Studio
+                  <ArrowRight size={13} />
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </header>
