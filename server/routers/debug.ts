@@ -43,7 +43,7 @@ export const debugRouter = router({
           user,
           password,
           database,
-          connectionTimeout: 10000,
+          connectTimeout: 10000,
         });
         console.log("[Debug] ✓ MySQL2 connection successful");
       } catch (connError) {
