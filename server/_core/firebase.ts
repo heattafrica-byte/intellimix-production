@@ -44,11 +44,20 @@ export function getFirebaseAuth() {
  */
 export async function verifyIdToken(idToken: string) {
   try {
+    if (!idToken || typeof idToken !== 'string') {
+      throw new Error('idToken must be a non-empty string');
+    }
+    
     const auth = getFirebaseAuth();
+    if (!auth) {
+      throw new Error('Firebase Auth not initialized');
+    }
+
     return await auth.verifyIdToken(idToken);
   } catch (error) {
-    console.error("[Firebase] Token verification failed:", error instanceof Error ? error.message : error);
-    throw new Error("Invalid token");
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[Firebase] Token verification failed:", message);
+    throw new Error(`Invalid token: ${message}`);
   }
 }
 

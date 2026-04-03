@@ -9,11 +9,16 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
+      console.log("[Database] Initializing connection...");
       _db = drizzle(process.env.DATABASE_URL);
+      console.log("[Database] ✓ Connection initialized");
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("[Database] Failed to connect:", message);
       _db = null;
     }
+  } else if (!process.env.DATABASE_URL) {
+    console.warn("[Database] DATABASE_URL not set");
   }
   return _db;
 }
