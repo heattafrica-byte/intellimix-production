@@ -18,5 +18,9 @@ EXPOSE 8080
 # Cloud Run expects PORT env var, default to 8080
 ENV PORT=8080
 
+# Copy startup script
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 # Cloud Run injects environment variables at runtime
-CMD ["pnpm", "start"]
+CMD ["/app/start.sh"]
