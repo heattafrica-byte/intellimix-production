@@ -65,38 +65,47 @@ export const appRouter = router({
         try {
           const db = await getDb();
           if (!db) {
-            console.error("[Auth] Database unavailable");
+            console.error("[Auth] ✗ Database unavailable");
             throw new Error("Database unavailable");
           }
           
           console.log("[Auth] Login attempt for email:", input.email);
           
-          // Find user by email
-          const existing = await db
-            .select()
-            .from(users)
-            .where(eq(users.email, input.email))
-            .limit(1);
-          
-          console.log("[Auth] Query result count:", existing.length);
-          
-          if (existing.length === 0) {
-            console.log("[Auth] User not found for email:", input.email);
-            throw new Error("User not found");
+          try {
+            // Find user by email
+            const existing = await db
+              .select()
+              .from(users)
+              .where(eq(users.email, input.email))
+              .limit(1);
+            
+            console.log("[Auth] ✓ Query succeeded, results:", existing.length);
+            
+            if (existing.length === 0) {
+              console.log("[Auth] User not found for email:", input.email);
+              throw new Error("User not found");
+            }
+            
+            const user = existing[0];
+            console.log("[Auth] ✓ User found:", user.id, user.email);
+            
+            // Create session cookie
+            const cookieOptions = getSessionCookieOptions(ctx.req);
+            ctx.res.cookie(COOKIE_NAME, user.openId, { ...cookieOptions, httpOnly: true });
+            
+            console.log("[Auth] ✓ Session cookie set for user:", user.id);
+            return { id: user.id, email: user.email, name: user.name };
+            
+          } catch (queryError) {
+            const queryMsg = queryError instanceof Error ? queryError.message : String(queryError);
+            console.error("[Auth] ✗ Query failed:", queryMsg);
+            console.error("[Auth] Query error code:", (queryError as any)?.code || 'NO_CODE');
+            console.error("[Auth] Query error errno:", (queryError as any)?.errno || 'NO_ERRNO');
+            throw queryError;
           }
-          
-          const user = existing[0];
-          console.log("[Auth] User found:", user.id, user.email);
-          
-          // Create session cookie
-          const cookieOptions = getSessionCookieOptions(ctx.req);
-          ctx.res.cookie(COOKIE_NAME, user.openId, { ...cookieOptions, httpOnly: true });
-          
-          console.log("[Auth] Session cookie set for user:", user.id);
-          return { id: user.id, email: user.email, name: user.name };
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
-          console.error("[Auth] Login failed:", message);
+          console.error("[Auth] ✗ Login failed:", message);
           throw error;
         }
       }),

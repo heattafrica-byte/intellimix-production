@@ -10,15 +10,20 @@ export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
       console.log("[Database] Initializing connection...");
+      console.log("[Database] URL host:", process.env.DATABASE_URL.match(/@([^:]+)/)?.[1] || 'unknown');
+      console.log("[Database] URL database:", process.env.DATABASE_URL.match(/\/([^?]+)$/)?.[1] || 'unknown');
+      
       _db = drizzle(process.env.DATABASE_URL);
-      console.log("[Database] ✓ Connection initialized");
+      console.log("[Database] ✓ Connection pool created");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error("[Database] Failed to connect:", message);
+      console.error("[Database] ✗ Failed to initialize:", message);
+      console.error("[Database] Error code:", (error as any)?.code || 'N/A');
       _db = null;
     }
   } else if (!process.env.DATABASE_URL) {
-    console.warn("[Database] DATABASE_URL not set");
+    console.warn("[Database] ⚠ DATABASE_URL not set");
+    console.warn("[Database] Connection will be attempted on first query");
   }
   return _db;
 }
