@@ -6,6 +6,7 @@ import { pipelineRouter } from "./routers/pipeline";
 import { aiRouter } from "./routers/ai";
 import { paymentRouter } from "./routers/payment";
 import { debugRouter } from "./routers/debug";
+import { initRouter } from "./routers/init";
 import { z } from "zod";
 import { getDb } from "./db";
 import { users } from "../drizzle/schema";
@@ -121,6 +122,7 @@ export const appRouter = router({
   pipeline: pipelineRouter,
   ai: aiRouter,
   payment: paymentRouter,
+  init: initRouter,
 });
 
 export type AppRouter = typeof appRouter;
