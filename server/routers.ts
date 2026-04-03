@@ -5,6 +5,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { pipelineRouter } from "./routers/pipeline";
 import { aiRouter } from "./routers/ai";
 import { paymentRouter } from "./routers/payment";
+import { debugRouter } from "./routers/debug";
 import { z } from "zod";
 import { getDb } from "./db";
 import { users } from "../drizzle/schema";
@@ -13,6 +14,7 @@ import { nanoid } from "nanoid";
 
 export const appRouter = router({
   system: systemRouter,
+  debug: debugRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     
