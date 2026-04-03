@@ -1,7 +1,7 @@
-import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
-import { getDb } from "./db";
-import { users } from "../drizzle/schema";
+import { systemRouter } from "../_core/systemRouter";
+import { publicProcedure, router } from "../_core/trpc";
+import { getDb } from "../db";
+import { users } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 export const debugRouter = router({
