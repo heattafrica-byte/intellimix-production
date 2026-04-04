@@ -81,39 +81,63 @@ export async function verifyIdToken(idToken: string) {
       throw new Error('Invalid JWT format: one or more parts are empty');
     }
 
-    console.log(`[Firebase] Verifying token (length: ${trimmed.length}, parts: [${jwtParts[0].length}, ${jwtParts[1].length}, ${jwtParts[2].length}])`);
+    console.log(`[Firebase] ========== Token Verification Started ==========`);
+    console.log(`[Firebase] Token length: ${trimmed.length}`);
+    console.log(`[Firebase] JWT parts: [${jwtParts[0].length} chars, ${jwtParts[1].length} chars, ${jwtParts[2].length} chars]`);
+    console.log(`[Firebase] Token header: ${jwtParts[0]}`);
+    console.log(`[Firebase] Token payload (first 100 chars): ${jwtParts[1].substring(0, 100)}...`);
+    console.log(`[Firebase] Token signature (first 50 chars): ${jwtParts[2].substring(0, 50)}...`);
     
     const auth = getFirebaseAuth();
     if (!auth) {
       throw new Error('Firebase Auth not initialized');
     }
 
-    console.log(`[Firebase] Auth object ready, calling verifyIdToken...`);
+    console.log(`[Firebase] Calling admin.auth().verifyIdToken()...`);
     
     try {
-      const decodedToken = await auth.verifyIdToken(trimmed);
-      console.log(`[Firebase] Token verified successfully for uid: ${decodedToken.uid}, email: ${decodedToken.email}, provider: ${decodedToken.firebase?.sign_in_provider}`);
+      // Wrap in try-catch to get full error details from Firebase Admin SDK
+      let decodedToken;
+      try {
+        decodedToken = await auth.verifyIdToken(trimmed);
+      } catch (fbError: any) {
+        // Log the exact error from Firebase
+        console.error(`[Firebase] Firebase Admin SDK threw:`, {
+          message: fbError?.message,
+          code: fbError?.code,
+          errorConstructor: fbError?.constructor?.name,
+          ...(fbError instanceof Error && { stack: fbError.stack })
+        });
+        throw fbError;
+      }
+
+      console.log(`[Firebase] ✅ Token verified for uid: ${decodedToken.uid}`);
+      console.log(`[Firebase] Email: ${decodedToken.email}, Provider: ${decodedToken.firebase?.sign_in_provider}`);
+      console.log(`[Firebase] =========================================`);
       return decodedToken;
-    } catch (firebaseError) {
-      const fbMessage = firebaseError instanceof Error ? firebaseError.message : String(firebaseError);
-      console.error(`[Firebase] Firebase Admin SDK error: ${fbMessage}`);
+    } catch (fbError: any) {
+      const fbMessage = fbError?.message || String(fbError);
+      console.error(`[Firebase] ❌ Firebase verification error: ${fbMessage}`);
       
-      // Provide helpful context about what went wrong
+      // Handle specific Firebase errors
       if (fbMessage.includes("Cannot find a matching key")) {
-        throw new Error("Token signing key mismatch - ensure client and server use the same Firebase project");
+        throw new Error("Token from different Firebase project - ensure client Firebase config matches server");
       } else if (fbMessage.includes("Decoding error")) {
-        throw new Error("Token is malformed - cannot decode JWT structure");
+        throw new Error("Token structure invalid - cannot decode JWT");
       } else if (fbMessage.includes("Token expired")) {
         throw new Error("Firebase ID token has expired");
       } else if (fbMessage.includes("Signature verification failed")) {
-        throw new Error("Token signature invalid - may be from wrong Firebase project");
+        throw new Error("Token signature invalid");
+      } else if (fbMessage.includes("Cannot read properties")) {
+        throw new Error("Firebase SDK internal error - token may be malformed. Server mismatch with client Firebase config?");
       }
       
       throw new Error(`Token verification failed: ${fbMessage}`);
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error("[Firebase] Token verification failed:", message);
+    console.error("[Firebase] ❌ Token verification failed:", message);
+    console.error("[Firebase] =========================================");
     throw new Error(`Invalid token: ${message}`);
   }
 }
