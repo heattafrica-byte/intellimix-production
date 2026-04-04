@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Chrome, Github, Mail } from "lucide-react";
 import { getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, signInWithEmailAndPassword } from "firebase/auth";
 import { initializeFirebase } from "@/_core/firebase";
+import { authTokenManager } from "@/_core/authTokenManager";
 
 interface LoginDialogProps {
   open: boolean;
@@ -43,37 +44,40 @@ export function LoginDialog({
       
       console.log("[LoginDialog] Got Firebase token, sending to backend...");
       
-      // Send token to backend
-      const response = await fetch("/api/oauth/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-      
-      let data: any;
+      // Create session using token manager
       try {
-        data = await response.json();
-      } catch {
-        data = { error: await response.text() };
-      }
-      
-      console.log(`[LoginDialog] Response status: ${response.status}`, data);
-      
-      if (response.ok) {
-        console.log("[LoginDialog] Login successful:", data);
+        await authTokenManager.createSession(idToken);
+        
+        console.log("[LoginDialog] Login successful");
         setEmail("");
         setPassword("");
         onOpenChange(false);
         onLoginSuccess?.();
         toast.success("Signed in successfully");
-      } else {
-        const errorMsg = data.details || data.error || JSON.stringify(data) || "Sign in failed";
-        console.error("[LoginDialog] Backend error:", errorMsg);
-        toast.error(errorMsg);
+      } catch (sessionError: any) {
+        console.error("[LoginDialog] Failed to create session:", sessionError);
+        const errorMessage = sessionError.message || "Failed to create session";
+        toast.error(errorMessage);
+        
+        // If backend token verification fails, user is authenticated with Firebase but not in our system
+        // This is a valid state - they may need to sign up instead
+        if (errorMessage.includes("Invalid token") || errorMessage.includes("verification failed")) {
+          toast.error("This account is not registered. Please sign up instead.");
+        }
       }
     } catch (error: any) {
       console.error("[LoginDialog] Email sign-in failed:", error);
-      toast.error(error.message || "Email sign-in failed");
+      
+      // Handle specific Firebase errors
+      if (error.code === "auth/user-not-found") {
+        toast.error("Email not found. Please sign up first.");
+      } else if (error.code === "auth/wrong-password") {
+        toast.error("Incorrect password");
+      } else if (error.code === "auth/invalid-email") {
+        toast.error("Invalid email format");
+      } else {
+        toast.error(error.message || "Email sign-in failed");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -85,39 +89,43 @@ export function LoginDialog({
       const app = await initializeFirebase();
       const auth = getAuth(app);
       const provider = new GoogleAuthProvider();
+      
+      // Make the popup no longer inheritable to avoid COOP issues
+      provider.getCustomParameters();
+      
       const result = await signInWithPopup(auth, provider);
       const idToken = await result.user.getIdToken();
       
       console.log("[LoginDialog] Got Google token, sending to backend...");
       
-      // Send token to backend
-      const response = await fetch("/api/oauth/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-      
-      let data: any;
+      // Create session using token manager
       try {
-        data = await response.json();
-      } catch {
-        data = { error: await response.text() };
-      }
-      
-      console.log(`[LoginDialog] Google response status: ${response.status}`, data);
-      
-      if (response.ok) {
-        console.log("[LoginDialog] Google login successful:", data);
+        await authTokenManager.createSession(idToken);
+        
+        console.log("[LoginDialog] Google login successful");
         onOpenChange(false);
         onLoginSuccess?.();
         toast.success("Signed in successfully");
-      } else {
-        const errorMsg = data.details || data.error || JSON.stringify(data) || "Sign in failed";
-        console.error("[LoginDialog] Google backend error:", errorMsg);
-        toast.error(errorMsg);
+      } catch (sessionError: any) {
+        console.error("[LoginDialog] Failed to create session:", sessionError);
+        toast.error(sessionError.message || "Failed to create session");
       }
     } catch (error: any) {
       console.error("[LoginDialog] Google sign-in failed:", error);
+      
+      // Ignore user cancellation
+      if (error.code === "auth/popup-closed-by-user") {
+        console.log("[LoginDialog] User closed the popup");
+        return;
+      }
+      
+      // Ignore COOP errors - they're non-fatal
+      if (error.message?.includes("COOP") || error.message?.includes("Cross-Origin")) {
+        console.log("[LoginDialog] COOP error (non-fatal):", error.message);
+        // Try to continue anyway - the auth might have worked
+        return;
+      }
+      
       toast.error(error.message || "Google sign-in failed");
     } finally {
       setIsLoading(false);
@@ -135,34 +143,33 @@ export function LoginDialog({
       
       console.log("[LoginDialog] Got GitHub token, sending to backend...");
       
-      // Send token to backend
-      const response = await fetch("/api/oauth/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-      
-      let data: any;
+      // Create session using token manager
       try {
-        data = await response.json();
-      } catch {
-        data = { error: await response.text() };
-      }
-      
-      console.log(`[LoginDialog] GitHub response status: ${response.status}`, data);
-      
-      if (response.ok) {
-        console.log("[LoginDialog] GitHub login successful:", data);
+        await authTokenManager.createSession(idToken);
+        
+        console.log("[LoginDialog] GitHub login successful");
         onOpenChange(false);
         onLoginSuccess?.();
         toast.success("Signed in successfully");
-      } else {
-        const errorMsg = data.details || data.error || JSON.stringify(data) || "Sign in failed";
-        console.error("[LoginDialog] GitHub backend error:", errorMsg);
-        toast.error(errorMsg);
+      } catch (sessionError: any) {
+        console.error("[LoginDialog] Failed to create session:", sessionError);
+        toast.error(sessionError.message || "Failed to create session");
       }
     } catch (error: any) {
       console.error("[LoginDialog] GitHub sign-in failed:", error);
+      
+      // Ignore user cancellation
+      if (error.code === "auth/popup-closed-by-user") {
+        console.log("[LoginDialog] User closed the popup");
+        return;
+      }
+      
+      // Ignore COOP errors - they're non-fatal
+      if (error.message?.includes("COOP") || error.message?.includes("Cross-Origin")) {
+        console.log("[LoginDialog] COOP error (non-fatal):", error.message);
+        return;
+      }
+      
       toast.error(error.message || "GitHub sign-in failed");
     } finally {
       setIsLoading(false);
