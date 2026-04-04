@@ -57,14 +57,31 @@ export function getFirebaseAuth() {
  */
 export async function verifyIdToken(idToken: string) {
   try {
-    // Validate input
-    if (typeof idToken !== 'string' || idToken.trim().length === 0) {
-      const errorMsg = `Invalid idToken type: ${typeof idToken}, empty: ${!idToken || idToken.trim().length === 0}`;
-      console.error(`[Firebase] ${errorMsg}`);
-      throw new Error(errorMsg);
+    // Strict input validation
+    if (!idToken) {
+      throw new Error('idToken is empty or null');
     }
     
-    console.log(`[Firebase] Verifying token (length: ${idToken.length}, starts with: ${idToken.substring(0, 20)}...)`);
+    if (typeof idToken !== 'string') {
+      throw new Error(`idToken must be a string, received ${typeof idToken}`);
+    }
+
+    const trimmed = idToken.trim();
+    if (trimmed.length === 0) {
+      throw new Error('idToken is empty (whitespace only)');
+    }
+
+    // Validate JWT format (must have 3 parts separated by dots)
+    const jwtParts = trimmed.split('.');
+    if (jwtParts.length !== 3) {
+      throw new Error(`Invalid JWT format: expected 3 parts separated by dots, got ${jwtParts.length} parts. Token may be corrupted in transit.`);
+    }
+
+    if (jwtParts.some(part => part.length === 0)) {
+      throw new Error('Invalid JWT format: one or more parts are empty');
+    }
+
+    console.log(`[Firebase] Verifying token (length: ${trimmed.length}, parts: [${jwtParts[0].length}, ${jwtParts[1].length}, ${jwtParts[2].length}])`);
     
     const auth = getFirebaseAuth();
     if (!auth) {
@@ -72,31 +89,31 @@ export async function verifyIdToken(idToken: string) {
     }
 
     console.log(`[Firebase] Auth object ready, calling verifyIdToken...`);
-    const decodedToken = await auth.verifyIdToken(idToken);
     
-    console.log(`[Firebase] Token verified successfully for uid: ${decodedToken.uid}, email: ${decodedToken.email}, provider: ${decodedToken.firebase?.sign_in_provider}`);
-    return decodedToken;
+    try {
+      const decodedToken = await auth.verifyIdToken(trimmed);
+      console.log(`[Firebase] Token verified successfully for uid: ${decodedToken.uid}, email: ${decodedToken.email}, provider: ${decodedToken.firebase?.sign_in_provider}`);
+      return decodedToken;
+    } catch (firebaseError) {
+      const fbMessage = firebaseError instanceof Error ? firebaseError.message : String(firebaseError);
+      console.error(`[Firebase] Firebase Admin SDK error: ${fbMessage}`);
+      
+      // Provide helpful context about what went wrong
+      if (fbMessage.includes("Cannot find a matching key")) {
+        throw new Error("Token signing key mismatch - ensure client and server use the same Firebase project");
+      } else if (fbMessage.includes("Decoding error")) {
+        throw new Error("Token is malformed - cannot decode JWT structure");
+      } else if (fbMessage.includes("Token expired")) {
+        throw new Error("Firebase ID token has expired");
+      } else if (fbMessage.includes("Signature verification failed")) {
+        throw new Error("Token signature invalid - may be from wrong Firebase project");
+      }
+      
+      throw new Error(`Token verification failed: ${fbMessage}`);
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const stack = error instanceof Error ? error.stack : '';
     console.error("[Firebase] Token verification failed:", message);
-    console.error("[Firebase] Full error context:", {
-      errorType: error?.constructor?.name,
-      errorCode: (error as any)?.code,
-      errorMessage: message,
-    });
-    
-    // Provide more helpful error messages
-    if (message.includes("Decoding error")) {
-      throw new Error("Invalid token format - token may be malformed or corrupted");
-    } else if (message.includes("Token expired")) {
-      throw new Error("Firebase ID token has expired - please sign in again");
-    } else if (message.includes("Signature verification failed")) {
-      throw new Error("Token signature invalid - authentication failed");
-    } else if (message.includes("Cannot find a matching key")) {
-      throw new Error("Token signing key not found - server configuration issue");
-    }
-    
     throw new Error(`Invalid token: ${message}`);
   }
 }

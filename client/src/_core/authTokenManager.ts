@@ -171,21 +171,46 @@ class AuthTokenManager {
    */
   async createSession(idToken: string, plan?: string): Promise<AuthSession | null> {
     try {
-      console.log("[AuthTokenManager] Creating new session with ID token...");
+      // Validate token format before sending
+      if (!idToken || typeof idToken !== 'string') {
+        throw new Error(`Invalid idToken type: ${typeof idToken}`);
+      }
+
+      const trimmed = idToken.trim();
+      if (trimmed.length === 0) {
+        throw new Error("idToken is empty");
+      }
+
+      // Check JWT format
+      const parts = trimmed.split('.');
+      if (parts.length !== 3) {
+        throw new Error(`Token format invalid: expected 3 parts, got ${parts.length}. This usually means Firebase SDK didn't return a valid token.`);
+      }
+
+      console.log(`[AuthTokenManager] Creating new session with ID token (length: ${trimmed.length})...`);
       
       const response = await fetch("/api/oauth/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          idToken,
+          idToken: trimmed,
           plan: plan?.toLowerCase(),
         }),
         credentials: "include",
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
-        throw new Error(errorData.details || errorData.error || "Failed to create session");
+        let errorData: any;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: await response.text() };
+        }
+        
+        const errorMessage = errorData.details || errorData.error || "Unknown error";
+        console.error(`[AuthTokenManager] Backend error (${response.status}):`, errorMessage);
+        
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -201,7 +226,8 @@ class AuthTokenManager {
       console.log("[AuthTokenManager] Session created successfully");
       return session;
     } catch (error) {
-      console.error("[AuthTokenManager] Failed to create session:", error);
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("[AuthTokenManager] Failed to create session:", message);
       throw error;
     }
   }

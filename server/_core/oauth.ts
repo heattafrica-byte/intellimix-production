@@ -64,11 +64,22 @@ export function registerOAuthRoutes(app: Express) {
     try {
       const { idToken, plan } = req.body;
 
-      console.log(`[OAuth] Received request. Keys: ${Object.keys(req.body).join(', ')}`);
-      console.log(`[OAuth] idToken present: ${!!idToken}, plan: ${plan || 'none'}`);
+      console.log(`[OAuth] ========== Token Verification Request ==========`);
+      console.log(`[OAuth] Request body keys: ${Object.keys(req.body).join(', ')}`);
+      console.log(`[OAuth] idToken present: ${!!idToken}`);
+      console.log(`[OAuth] idToken type: ${typeof idToken}`);
+      if (idToken) {
+        const token = String(idToken).trim();
+        const parts = token.split('.');
+        console.log(`[OAuth] Token structure: ${parts.length} parts`);
+        console.log(`[OAuth] Part lengths: [${parts.map(p => p.length).join(', ')}]`);
+        console.log(`[OAuth] Token starts with: ${token.substring(0, 50)}...`);
+      }
+      console.log(`[OAuth] Plan: ${plan || 'none'}`);
+      console.log(`[OAuth] ====================================================`);
 
       if (!idToken) {
-        console.error("[OAuth] idToken missing from request body");
+        console.error("[OAuth] ❌ idToken missing from request body");
         res.status(400).json({ 
           error: "idToken is required",
           details: "No Firebase ID token provided in request body"
@@ -77,7 +88,7 @@ export function registerOAuthRoutes(app: Express) {
       }
 
       if (typeof idToken !== 'string') {
-        console.error(`[OAuth] idToken is not a string: ${typeof idToken}`);
+        console.error(`[OAuth] ❌ idToken is not a string: ${typeof idToken}`);
         res.status(400).json({
           error: "Invalid idToken format",
           details: `idToken must be a string, received ${typeof idToken}`
@@ -86,7 +97,7 @@ export function registerOAuthRoutes(app: Express) {
       }
 
       if (idToken.trim().length === 0) {
-        console.error("[OAuth] idToken is empty string");
+        console.error("[OAuth] ❌ idToken is empty string");
         res.status(400).json({
           error: "idToken cannot be empty",
           details: "Firebase ID token is empty"
@@ -94,8 +105,6 @@ export function registerOAuthRoutes(app: Express) {
         return;
       }
 
-      console.log(`[OAuth] Token length: ${idToken.length}, starting with: ${idToken.substring(0, 20)}...`);
-      
       // Verify Firebase ID token
       const decodedToken = await verifyIdToken(idToken);
       const uid = decodedToken.uid;
@@ -103,7 +112,7 @@ export function registerOAuthRoutes(app: Express) {
       const name = decodedToken.name || null;
       const provider = decodedToken.firebase?.sign_in_provider || "unknown";
 
-      console.log(`[OAuth] Token verified for user: ${uid} (${provider}), email: ${email}`);
+      console.log(`[OAuth] ✅ Token verified for user: ${uid} (${provider}), email: ${email}`);
 
       // Create or update user in database
       try {
@@ -114,9 +123,9 @@ export function registerOAuthRoutes(app: Express) {
           loginMethod: provider,
           lastSignedIn: new Date(),
         });
-        console.log(`[OAuth] User upserted successfully: ${uid}`);
+        console.log(`[OAuth] ✅ User upserted successfully: ${uid}`);
       } catch (dbError) {
-        console.error("[OAuth] Database error during user upsert:", dbError);
+        console.error("[OAuth] ❌ Database error during user upsert:", dbError);
         throw new Error(`Database error: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
       }
 
@@ -129,7 +138,7 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      console.log(`[OAuth] Session created for user: ${uid}`);
+      console.log(`[OAuth] ✅ Session created for user: ${uid}`);
       res.status(200).json({ 
         success: true, 
         sessionToken, 
@@ -139,15 +148,23 @@ export function registerOAuthRoutes(app: Express) {
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error("[OAuth] Token verification/session creation failed:", errorMessage);
+      console.error("[OAuth] ❌ Token verification/session creation failed:", errorMessage);
       console.error("[OAuth] Full error:", error);
       
-      // Return 401 for auth failures, 500 for other errors
-      const isAuthError = errorMessage.includes("Invalid token") || 
-                         errorMessage.includes("Token") ||
-                         errorMessage.includes("Firebase");
+      // Return 401 for auth failures, 400 for client errors, 500 for server errors
+      let statusCode = 500;
+      if (errorMessage.includes("Invalid JWT format") || 
+          errorMessage.includes("empty") ||
+          errorMessage.includes("type")) {
+        statusCode = 400; // Client error
+      } else if (errorMessage.includes("Invalid token") || 
+                 errorMessage.includes("Token") ||
+                 errorMessage.includes("signature") ||
+                 errorMessage.includes("Firebase")) {
+        statusCode = 401; // Auth error
+      }
       
-      res.status(isAuthError ? 401 : 500).json({ 
+      res.status(statusCode).json({ 
         error: "Authentication failed",
         details: errorMessage || "Unable to verify credentials",
       });
