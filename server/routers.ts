@@ -9,7 +9,7 @@ import { paymentRouter } from "./routers/payment";
 import { debugRouter } from "./routers/debug";
 import { initRouter } from "./routers/init";
 import * as db from "./db";
-import { createSessionToken } from "./_core/firebase";
+import { createSessionToken, verifyIdToken } from "./_core/firebase";
 
 export const appRouter = router({
   system: systemRouter,
@@ -26,7 +26,6 @@ export const appRouter = router({
         const { idToken, plan } = input;
         
         try {
-          const { verifyIdToken } = await import("./_core/firebase");
           const decodedToken = await verifyIdToken(idToken);
           const uid = decodedToken.uid;
           const email = decodedToken.email || null;
