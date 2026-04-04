@@ -108,19 +108,16 @@ export default function Home() {
                   size="sm"
                   variant="ghost"
                   className="gap-2 text-xs"
-                  onClick={() => setLoginOpen(true)}
+                  onClick={() => setSignupOpen(true)}
                 >
-                  Sign In
+                  Sign Up
                 </Button>
                 <Button
                   size="sm"
                   className="gap-2 text-xs bg-primary hover:bg-primary/90"
-                  onClick={() => {
-                    setSelectedPlan(null);
-                    setSignupOpen(true);
-                  }}
+                  onClick={() => setLoginOpen(true)}
                 >
-                  Sign Up
+                  Sign In
                 </Button>
               </>
             )}
