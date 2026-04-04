@@ -62,6 +62,9 @@ export function registerOAuthRoutes(app: Express) {
   app.post("/api/oauth/verify", async (req: Request, res: Response) => {
     const { idToken } = req.body;
 
+    console.log(`[OAuth] Received request body keys: ${Object.keys(req.body).join(', ')}`);
+    console.log(`[OAuth] idToken type: ${typeof idToken}, value exists: ${!!idToken}`);
+
     if (!idToken) {
       console.error("[OAuth] idToken missing from request body");
       res.status(400).json({ error: "idToken is required" });
@@ -69,7 +72,7 @@ export function registerOAuthRoutes(app: Express) {
     }
 
     try {
-      console.log("[OAuth] Verifying token...");
+      console.log(`[OAuth] Verifying token (length: ${idToken.length})...`);
       // Verify Firebase ID token
       const decodedToken = await verifyIdToken(idToken);
       const uid = decodedToken.uid;

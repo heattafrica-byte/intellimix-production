@@ -57,8 +57,14 @@ export function getFirebaseAuth() {
  */
 export async function verifyIdToken(idToken: string) {
   try {
+    console.log(`[Firebase] Verifying token: type=${typeof idToken}, length=${typeof idToken === 'string' ? idToken.length : 'N/A'}`);
+    
     if (!idToken || typeof idToken !== 'string') {
-      throw new Error('idToken must be a non-empty string');
+      throw new Error(`idToken must be a non-empty string, got: ${typeof idToken}`);
+    }
+    
+    if (idToken.length === 0) {
+      throw new Error('idToken is empty string');
     }
     
     const auth = getFirebaseAuth();
@@ -66,10 +72,15 @@ export async function verifyIdToken(idToken: string) {
       throw new Error('Firebase Auth not initialized');
     }
 
-    return await auth.verifyIdToken(idToken);
+    console.log(`[Firebase] Auth object ready, calling verifyIdToken...`);
+    const decodedToken = await auth.verifyIdToken(idToken);
+    console.log(`[Firebase] Token verified successfully for uid: ${decodedToken.uid}`);
+    return decodedToken;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : '';
     console.error("[Firebase] Token verification failed:", message);
+    console.error("[Firebase] Stack:", stack);
     throw new Error(`Invalid token: ${message}`);
   }
 }
