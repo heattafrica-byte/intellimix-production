@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 
 let isInitialized = false;
+let initError: Error | null = null;
 
 /**
  * Initialize Firebase Admin SDK - MUST succeed on first call
@@ -14,35 +15,56 @@ function initializeFirebase() {
   if (!keyJson) {
     const error = "[Firebase] FIREBASE_ADMIN_KEY environment variable is not set - authentication will fail";
     console.error(error);
-    throw new Error(error);
+    initError = new Error(error);
+    throw initError;
   }
 
   try {
-    const credentials = JSON.parse(keyJson);
+    console.log("[Firebase] Parsing FIREBASE_ADMIN_KEY JSON...");
+    let credentials;
+    try {
+      credentials = JSON.parse(keyJson);
+    } catch (parseError) {
+      throw new Error(`Failed to parse FIREBASE_ADMIN_KEY as JSON: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+    }
+    
+    console.log(`[Firebase] ✅ Parsed Firebase credentials for project: ${credentials.project_id}`);
     
     if (!credentials.project_id || !credentials.private_key || !credentials.client_email) {
       throw new Error("Firebase credential JSON is missing required fields: project_id, private_key, or client_email");
     }
     
-    admin.initializeApp({
-      credential: admin.credential.cert(credentials),
-      projectId: credentials.project_id,
-    });
+    console.log("[Firebase] Calling admin.initializeApp()...");
+    try {
+      admin.initializeApp({
+        credential: admin.credential.cert(credentials),
+        projectId: credentials.project_id,
+      });
+    } catch (initErr) {
+      console.error(`[Firebase] admin.initializeApp() error:`, initErr);
+      throw initErr;
+    }
 
     isInitialized = true;
-    console.log(`[Firebase] Admin SDK initialized successfully for project: ${credentials.project_id}`);
+    console.log(`[Firebase] ✅ Admin SDK initialized successfully for project: ${credentials.project_id}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const fullError = `[Firebase] Initialization failed: ${message}`;
     console.error(fullError);
-    throw new Error(fullError);
+    initError = new Error(message);
+    throw initError;
   }
 }
 
 // Initialize on first use, not on import
 export function getFirebaseAuth() {
   if (!isInitialized) {
-    initializeFirebase();
+    try {
+      initializeFirebase();
+    } catch (error) {
+      console.error(`[Firebase] Failed to initialize during getFirebaseAuth():`, error);
+      throw error;
+    }
   }
   
   if (admin.apps.length === 0) {
