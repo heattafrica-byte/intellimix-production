@@ -165,12 +165,26 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="flex items-center justify-center gap-3 flex-wrap"
           >
-            <Link href="/studio">
-              <Button size="lg" className="gap-2 px-8 bg-primary hover:bg-primary/90">
+            {isAuthenticated ? (
+              <Link href="/studio">
+                <Button size="lg" className="gap-2 px-8 bg-primary hover:bg-primary/90">
+                  <Wand2 size={16} />
+                  Open Studio
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                size="lg"
+                className="gap-2 px-8 bg-primary hover:bg-primary/90"
+                onClick={() => {
+                  setSelectedPlan(null);
+                  setSignupOpen(true);
+                }}
+              >
                 <Wand2 size={16} />
                 Start Mixing Free
               </Button>
-            </Link>
+            )}
           </motion.div>
 
           <motion.div
@@ -344,12 +358,27 @@ export default function Home() {
 
                 <div className="p-6 border-t border-border/10">
                   {plan.name === "Free" ? (
-                    <Link href="/studio" className="block">
-                      <Button size="lg" variant="outline" className="w-full gap-2">
+                    isAuthenticated ? (
+                      <Link href="/studio" className="block">
+                        <Button size="lg" variant="outline" className="w-full gap-2">
+                          Go to Studio
+                          <ArrowRight size={14} />
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={() => {
+                          setSelectedPlan(null);
+                          setSignupOpen(true);
+                        }}
+                      >
                         Get Started Free
                         <ArrowRight size={14} />
                       </Button>
-                    </Link>
+                    )
                   ) : (
                     <Button
                       size="lg"
@@ -386,12 +415,26 @@ export default function Home() {
           <p className="text-muted-foreground max-w-md mx-auto text-sm">
             Upload your stems now — no credit card, no plugin installs, no DAW required. Process at 192 kHz 32-bit and download in any format.
           </p>
-          <Link href="/studio">
-            <Button size="lg" className="gap-2 px-10 bg-primary hover:bg-primary/90">
+          {isAuthenticated ? (
+            <Link href="/studio">
+              <Button size="lg" className="gap-2 px-10 bg-primary hover:bg-primary/90">
+                <Wand2 size={16} />
+                Open Intellimix Studio
+              </Button>
+            </Link>
+          ) : (
+            <Button
+              size="lg"
+              className="gap-2 px-10 bg-primary hover:bg-primary/90"
+              onClick={() => {
+                setSelectedPlan(null);
+                setSignupOpen(true);
+              }}
+            >
               <Wand2 size={16} />
-              Open Intellimix Studio
+              Get Started Free
             </Button>
-          </Link>
+          )}
         </div>
       </section>
 
@@ -413,6 +456,8 @@ export default function Home() {
         plan={selectedPlan || undefined}
         onSignupSuccess={() => {
           setSelectedPlan(null);
+          // Redirect to studio on successful signup
+          window.location.href = "/studio";
         }}
       />
 
