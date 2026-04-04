@@ -50,7 +50,14 @@ export function LoginDialog({
         body: JSON.stringify({ idToken }),
       });
       
-      const data = await response.json();
+      let data: any;
+      try {
+        data = await response.json();
+      } catch {
+        data = { error: await response.text() };
+      }
+      
+      console.log(`[LoginDialog] Response status: ${response.status}`, data);
       
       if (response.ok) {
         console.log("[LoginDialog] Login successful:", data);
@@ -60,8 +67,9 @@ export function LoginDialog({
         onLoginSuccess?.();
         toast.success("Signed in successfully");
       } else {
-        console.error("[LoginDialog] Backend error:", data);
-        toast.error(data.details || data.error || "Sign in failed");
+        const errorMsg = data.details || data.error || JSON.stringify(data) || "Sign in failed";
+        console.error("[LoginDialog] Backend error:", errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error: any) {
       console.error("[LoginDialog] Email sign-in failed:", error);
@@ -89,7 +97,14 @@ export function LoginDialog({
         body: JSON.stringify({ idToken }),
       });
       
-      const data = await response.json();
+      let data: any;
+      try {
+        data = await response.json();
+      } catch {
+        data = { error: await response.text() };
+      }
+      
+      console.log(`[LoginDialog] Google response status: ${response.status}`, data);
       
       if (response.ok) {
         console.log("[LoginDialog] Google login successful:", data);
@@ -97,8 +112,9 @@ export function LoginDialog({
         onLoginSuccess?.();
         toast.success("Signed in successfully");
       } else {
-        console.error("[LoginDialog] Backend error:", data);
-        toast.error(data.details || data.error || "Sign in failed");
+        const errorMsg = data.details || data.error || JSON.stringify(data) || "Sign in failed";
+        console.error("[LoginDialog] Google backend error:", errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error: any) {
       console.error("[LoginDialog] Google sign-in failed:", error);
@@ -126,7 +142,14 @@ export function LoginDialog({
         body: JSON.stringify({ idToken }),
       });
       
-      const data = await response.json();
+      let data: any;
+      try {
+        data = await response.json();
+      } catch {
+        data = { error: await response.text() };
+      }
+      
+      console.log(`[LoginDialog] GitHub response status: ${response.status}`, data);
       
       if (response.ok) {
         console.log("[LoginDialog] GitHub login successful:", data);
@@ -134,8 +157,9 @@ export function LoginDialog({
         onLoginSuccess?.();
         toast.success("Signed in successfully");
       } else {
-        console.error("[LoginDialog] Backend error:", data);
-        toast.error(data.details || data.error || "Sign in failed");
+        const errorMsg = data.details || data.error || JSON.stringify(data) || "Sign in failed";
+        console.error("[LoginDialog] GitHub backend error:", errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error: any) {
       console.error("[LoginDialog] GitHub sign-in failed:", error);

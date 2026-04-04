@@ -60,10 +60,17 @@ export function SignupDialog({
         }),
       });
       
-      const data = await response.json();
+      let data: any;
+      try {
+        data = await response.json();
+      } catch {
+        data = { error: await response.text() };
+      }
+      
+      console.log(`[SignupDialog] Email response status: ${response.status}`, data);
       
       if (response.ok) {
-        console.log("[SignupDialog] Signup successful:", data);
+        console.log("[SignupDialog] Email signup successful:", data);
         setEmail("");
         setPassword("");
         setConfirmPassword("");
@@ -71,8 +78,9 @@ export function SignupDialog({
         onSignupSuccess?.();
         toast.success("Account created successfully");
       } else {
-        console.error("[SignupDialog] Backend error:", data);
-        toast.error(data.details || data.error || "Sign up failed");
+        const errorMsg = data.details || data.error || JSON.stringify(data) || "Sign up failed";
+        console.error("[SignupDialog] Email backend error:", errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error: any) {
       console.error("[SignupDialog] Email sign-up failed:", error);
@@ -103,7 +111,14 @@ export function SignupDialog({
         }),
       });
       
-      const data = await response.json();
+      let data: any;
+      try {
+        data = await response.json();
+      } catch {
+        data = { error: await response.text() };
+      }
+      
+      console.log(`[SignupDialog] Google response status: ${response.status}`, data);
       
       if (response.ok) {
         console.log("[SignupDialog] Google signup successful:", data);
@@ -111,8 +126,9 @@ export function SignupDialog({
         onSignupSuccess?.();
         toast.success("Account created successfully");
       } else {
-        console.error("[SignupDialog] Backend error:", data);
-        toast.error(data.details || data.error || "Sign up failed");
+        const errorMsg = data.details || data.error || JSON.stringify(data) || "Sign up failed";
+        console.error("[SignupDialog] Google backend error:", errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error: any) {
       console.error("[SignupDialog] Google sign-up failed:", error);
@@ -143,7 +159,14 @@ export function SignupDialog({
         }),
       });
       
-      const data = await response.json();
+      let data: any;
+      try {
+        data = await response.json();
+      } catch {
+        data = { error: await response.text() };
+      }
+      
+      console.log(`[SignupDialog] GitHub response status: ${response.status}`, data);
       
       if (response.ok) {
         console.log("[SignupDialog] GitHub signup successful:", data);
@@ -151,8 +174,9 @@ export function SignupDialog({
         onSignupSuccess?.();
         toast.success("Account created successfully");
       } else {
-        console.error("[SignupDialog] Backend error:", data);
-        toast.error(data.details || data.error || "Sign up failed");
+        const errorMsg = data.details || data.error || JSON.stringify(data) || "Sign up failed";
+        console.error("[SignupDialog] GitHub backend error:", errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error: any) {
       console.error("[SignupDialog] GitHub sign-up failed:", error);
