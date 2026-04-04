@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
+import { SignupDialog } from "@/components/SignupDialog";
+import { LoginDialog } from "@/components/LoginDialog";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { AnimatePresence, motion } from "framer-motion";
@@ -211,6 +213,8 @@ function StemUploadProgress({
 export default function Studio() {
   const { user, isAuthenticated, logout } = useAuth();
   const [step, setStep] = useState<PipelineStep>("setup");
+  const [signupOpen, setSignupOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
 
   // Setup state
   const [sessionName, setSessionName] = useState("");
@@ -1063,15 +1067,23 @@ export default function Studio() {
                 </Button>
               </div>
             ) : (
-              <Button
-                size="sm"
-                className="text-xs"
-                onClick={() => {
-                  window.location.href = "/studio";
-                }}
-              >
-                Sign In
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="gap-2 text-xs"
+                  onClick={() => setLoginOpen(true)}
+                >
+                  Sign In
+                </Button>
+                <Button
+                  size="sm"
+                  className="gap-2 text-xs bg-primary hover:bg-primary/90"
+                  onClick={() => setSignupOpen(true)}
+                >
+                  Start for Free
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -1867,6 +1879,24 @@ export default function Studio() {
           )}
         </AnimatePresence>
       </main>
+
+      <SignupDialog
+        open={signupOpen}
+        onOpenChange={setSignupOpen}
+        onSignupSuccess={() => {
+          setSignupOpen(false);
+          window.location.href = "/studio";
+        }}
+      />
+
+      <LoginDialog
+        open={loginOpen}
+        onOpenChange={setLoginOpen}
+        onLoginSuccess={() => {
+          setLoginOpen(false);
+          window.location.href = "/studio";
+        }}
+      />
     </div>
   );
 }
