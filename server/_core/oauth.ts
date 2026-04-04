@@ -14,6 +14,28 @@ function getQueryParam(req: Request, key: string): string | undefined {
  * Expects Firebase ID token in query param or body
  */
 export function registerOAuthRoutes(app: Express) {
+  // Diagnostic endpoint - test Firebase credentials
+  app.get("/api/oauth/diagnostic", async (req, res) => {
+    try {
+      const { getFirebaseAuth } = await import("./firebase"); 
+      const auth = getFirebaseAuth();
+      
+      // Try to get app metadata as lightweight test
+      if (auth) {
+        return res.status(200).json({
+          status: "OK",
+          message: "Firebase Auth initialized successfully",
+          timestamp: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      return res.status(500).json({
+        status: "ERROR",
+        message: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
     const idToken = getQueryParam(req, "idToken") || getQueryParam(req, "token");
 

@@ -38,6 +38,35 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  
+  // Diagnostic endpoint to verify Firebase credentials are loaded
+  app.get("/api/diagnostic/firebase", (req, res) => {
+    try {
+      const keyJson = process.env.FIREBASE_ADMIN_KEY;
+      if (!keyJson) {
+        return res.status(500).json({ 
+          error: "FIREBASE_ADMIN_KEY not set",
+          status: "CRITICAL"
+        });
+      }
+      
+      const creds = JSON.parse(keyJson);
+      return res.status(200).json({
+        status: "OK",
+        projectId: creds.project_id,
+        clientEmail: creds.client_email,
+        hasPrivateKey: !!creds.private_key,
+        privateKeyLength: creds.private_key?.length || 0,
+        privateKeyType: creds.private_key?.includes("RSA") ? "RSA" : "PKCS8"
+      });
+    } catch (error) {
+      return res.status(500).json({
+        error: error instanceof Error ? error.message : String(error),
+        status: "ERROR"
+      });
+    }
+  });
+  
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   // tRPC API
