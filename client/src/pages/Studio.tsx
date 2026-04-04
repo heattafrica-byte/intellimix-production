@@ -1572,9 +1572,7 @@ export default function Studio() {
                   <Button
                     size="lg"
                     className="gap-2 px-8"
-                    onClick={() => {
-                      window.location.href = "/studio";
-                    }}
+                    onClick={() => setSignupOpen(true)}
                   >
                     <Zap size={16} />
                     Sign Up to Start
