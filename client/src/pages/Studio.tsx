@@ -485,8 +485,8 @@ export default function Studio() {
       });
       setStemFiles((prev) => [...prev, ...newStems]);
 
-      // Auto-analyse each stem
-      newStems.forEach(async (stem) => {
+      // Auto-analyse each stem — wait for all to complete
+      Promise.all(newStems.map(async (stem) => {
         setStemFiles((prev) => prev.map((s) => (s.id === stem.id ? { ...s, isAnalysing: true } : s)));
         try {
           const features = await analyseStem(stem.file);
@@ -496,6 +496,9 @@ export default function Studio() {
         } catch {
           setStemFiles((prev) => prev.map((s) => (s.id === stem.id ? { ...s, isAnalysing: false } : s)));
         }
+      })).catch(err => {
+        console.error("[Studio] Stem analysis failed:", err);
+        addLog(`Stem analysis error: ${err instanceof Error ? err.message : String(err)}`, "warning");
       });
     },
     [addLog],
@@ -909,12 +912,14 @@ export default function Studio() {
         return;
       }
 
-      // Build stem inputs from server-stored processing params
+      // Build stem inputs from server-stored processing params with proper type guard
       const stemInputs: StemInput[] = sessionStems
-        .filter((s) => s.fileUrl && s.processingParams)
+        .filter((s): s is typeof sessionStems[number] & { fileUrl: string; processingParams: StemProcessingParams } =>
+          !!s.fileUrl && !!s.processingParams
+        )
         .map((s) => ({
           url: s.fileUrl,
-          params: s.processingParams as unknown as StemProcessingParams,
+          params: s.processingParams,
         }));
 
       if (stemInputs.length === 0) {
