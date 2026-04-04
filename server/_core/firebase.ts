@@ -1,4 +1,5 @@
-import * as admin from "firebase-admin";
+import firebase_admin from "firebase-admin";
+const { credential } = firebase_admin;
 
 let isInitialized = false;
 let initError: Error | null = null;
@@ -7,7 +8,7 @@ let initError: Error | null = null;
  * Initialize Firebase Admin SDK - MUST succeed on first call
  */
 function initializeFirebase() {
-  if (isInitialized || admin.apps.length > 0) {
+  if (isInitialized || firebase_admin.apps.length > 0) {
     return;
   }
 
@@ -34,14 +35,14 @@ function initializeFirebase() {
       throw new Error("Firebase credential JSON is missing required fields: project_id, private_key, or client_email");
     }
     
-    console.log("[Firebase] Calling admin.initializeApp()...");
+    console.log("[Firebase] Calling firebase_admin.initializeApp()...");
     try {
-      admin.initializeApp({
-        credential: admin.credential.cert(credentials),
+      firebase_admin.initializeApp({
+        credential: credential.cert(credentials),
         projectId: credentials.project_id,
       });
     } catch (initErr) {
-      console.error(`[Firebase] admin.initializeApp() error:`, initErr);
+      console.error(`[Firebase] firebase_admin.initializeApp() error:`, initErr);
       throw initErr;
     }
 
@@ -67,11 +68,11 @@ export function getFirebaseAuth() {
     }
   }
   
-  if (admin.apps.length === 0) {
+  if (firebase_admin.apps.length === 0) {
     throw new Error("Firebase app not initialized");
   }
   
-  return admin.auth();
+  return firebase_admin.auth();
 }
 
 /**
@@ -115,7 +116,7 @@ export async function verifyIdToken(idToken: string) {
       throw new Error('Firebase Auth not initialized');
     }
 
-    console.log(`[Firebase] Calling admin.auth().verifyIdToken()...`);
+    console.log(`[Firebase] Calling firebase_admin.auth().verifyIdToken()...`);
     
     try {
       // Wrap in try-catch to get full error details from Firebase Admin SDK
